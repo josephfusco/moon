@@ -157,6 +157,9 @@ dialog h2 { font: 500 1.7rem/1.15 var(--sans); margin: 0 0 0.85rem; letter-spaci
 dialog h3 { font: 700 1rem/1.3 var(--sans); margin: 1.6rem 0 0.4rem; }
 dialog p, dialog li { color: #cdcdca; margin: 0 0 0.7rem; }
 dialog ul { padding-left: 1.2rem; margin: 0; }
+#btn-keep { padding: 0; min-height: 0; color: var(--ink); border-bottom: 1px solid var(--faint); }
+#btn-keep:disabled { border-bottom-color: transparent; cursor: default; color: var(--dim); }
+#keep-status { font-variant-numeric: tabular-nums; }
 
 /* Narrow: the almanac and the photo card join the bottom column instead of sitting beside the Moon. */
 @media (max-width: 640px) {

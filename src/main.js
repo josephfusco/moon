@@ -3,6 +3,7 @@ import {
   moonState, phaseName, phaseIndex, zodiac, searchPhase, moonAge, riseSet, nextApsis, localEffects, SYNODIC_DAYS, C_KM_S,
 } from './ephemeris.js';
 import { PHOTOS, FEATURES } from './data/artemis.js';
+import { allTiles } from './tiles.js';
 import orion from './data/orion.json';
 
 const $ = (id) => document.getElementById(id);
@@ -47,6 +48,43 @@ function keepOffline() {
     const extra = ['manifest.webmanifest', 'icon-192.png', 'icon-512.png'].map((f) => base + f);
     reg.active?.postMessage({ keep: [...new Set([base, ...used, ...photos, ...extra])] });
   }).catch(() => { /* offline support is a bonus; the app works without it */ });
+}
+
+// Detail tiles are saved as you look at them. This offers to save all of them, so every zoom works offline.
+async function offerFullDetail() {
+  const m = scene.tileManifest();
+  if (!m || !import.meta.env.PROD || !navigator.serviceWorker?.controller || !('caches' in window)) return;
+  const base = new URL(import.meta.env.BASE_URL, location.href).href;
+  const layers = [['c', m.color], ['n', m.normal]].filter(([, l]) => l);
+  const urls = allTiles(m.levels).flatMap(({ level, x, y }) => layers.map(([dir, l]) => `${base}tiles/${m.version}/${dir}/${level}/${x}_${y}.${l.ext}`));
+  const bytes = layers.reduce((sum, [, l]) => sum + l.bytes, 0), mb = Math.round(bytes / 1e6);
+  const cache = await caches.open('moon');
+  const missing = async () => { const have = new Set((await cache.keys()).map((r) => r.url)); return urls.filter((u) => !have.has(u)); };
+  const btn = $('btn-keep'), say = (s) => text($('keep-status'), s);
+  let todo = await missing();
+  $('offline-full').hidden = false;
+  const finished = () => { btn.hidden = true; say(`Full detail (${mb} MB) is kept on this device.`); };
+  if (!todo.length) return finished();
+  btn.hidden = false; btn.disabled = false;
+  btn.textContent = `Keep full detail offline (${mb} MB)`;
+  btn.onclick = async () => {
+    btn.disabled = true;
+    await navigator.storage?.persist?.(); // ask the browser not to clear this under storage pressure
+    const est = await navigator.storage?.estimate?.();
+    if (est?.quota && est.quota - est.usage < bytes * (todo.length / urls.length) * 1.1) { say('This device does not have enough free storage.'); return; }
+    let done = urls.length - todo.length;
+    const worker = async () => {
+      for (let u = todo.pop(); u; u = todo.pop()) {
+        try { const r = await fetch(u); if (r.ok) { await r.arrayBuffer(); done++; } } catch { /* counted below */ }
+        say(`${done} of ${urls.length} saved`);
+      }
+    };
+    await Promise.all(Array.from({ length: 6 }, worker));
+    await new Promise((r) => setTimeout(r, 800)); // let the last writes land
+    todo = await missing();
+    if (!todo.length) return finished();
+    say(`${todo.length} could not be saved. Try again when you are online.`); btn.disabled = false;
+  };
 }
 
 // ---------- Orion's trajectory (JPL Horizons) ----------
@@ -124,7 +162,7 @@ $('btn-next').onclick = () => nudge(DAY);
 $('btn-map').onclick = () => { S.mapLight = !S.mapLight; syncButtons(); };
 $('btn-details').onclick = () => { S.details = !S.details; store.set('details', S.details); almanacAt = NaN; syncButtons(); };
 $('btn-labels').onclick = () => { S.labels = !S.labels; syncButtons(); };
-$('btn-about').onclick = () => $('about').showModal();
+$('btn-about').onclick = () => { $('about').showModal(); offerFullDetail(); };
 $('about').addEventListener('click', (e) => { if (e.target === $('about')) $('about').close(); });
 $('btn-orient').onclick = () => {
   const order = S.where ? ['north', 'south', 'sky'] : ['north', 'south'];

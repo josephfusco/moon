@@ -134,11 +134,12 @@ async function tally(dir) {
 }
 const c = await tally('c'), n = await tally('n');
 console.log(`color: ${c.files} tiles, ${(c.bytes / 1e6).toFixed(1)} MB; relief: ${n.files} tiles, ${(n.bytes / 1e6).toFixed(1)} MB`);
-if (!SAMPLE && !ONLY) {
-  await writeFile('public/tiles/manifest.json', JSON.stringify({
-    version: VERSION, gutter: GUTTER, levels: LEVELS,
-    color: { px: colorPx, ext: 'webp', source: 'lroc_color_16bit_srgb.tif', sourceSize: colorSize, ...c },
-    normal: { px: normalPx, ext: 'jpg', source: 'ldem_64_uint.tif', sourceSize: demSize, rangeMeters: demRange, ...n },
-  }, null, 1) + '\n');
+if (!SAMPLE) {
+  // Each run records the layers it baked and keeps what an earlier run recorded for the other.
+  const old = await readFile('public/tiles/manifest.json', 'utf8').then(JSON.parse).catch(() => ({}));
+  const m = { version: VERSION, gutter: GUTTER, levels: LEVELS, color: old.color, normal: old.normal };
+  if (colorPx) m.color = { px: colorPx, ext: 'webp', source: 'lroc_color_16bit_srgb.tif', sourceSize: colorSize, ...c };
+  if (normalPx) m.normal = { px: normalPx, ext: 'jpg', source: 'ldem_64_uint.tif', sourceSize: demSize, rangeMeters: demRange, ...n };
+  await writeFile('public/tiles/manifest.json', JSON.stringify(m, null, 1) + '\n');
   console.log('wrote public/tiles/manifest.json');
 }

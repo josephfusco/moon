@@ -167,9 +167,10 @@ export function createScene(canvas, onProgress = () => {}) {
   const queue = [];
   let manifest = null, baseTexelKm = Infinity, lastPick = 0, loading = 0, levelNow = null;
   const SHOWN_MAX = 40, KEPT_MAX = 72, PARALLEL = 4;
-  fetch(`${TILES}manifest.json`)
+  // ?tiles=0 shows the base map alone, for comparing against the detail tiles.
+  (new URLSearchParams(location.search).get('tiles') === '0' ? Promise.reject() : fetch(`${TILES}manifest.json`))
     .then((r) => (r.ok && (r.headers.get('content-type') ?? '').includes('json') ? r.json() : null))
-    .then((m) => { if (m?.levels?.length && m.color?.px && m.normal?.px) manifest = m; })
+    .then((m) => { if (m?.levels?.length && (m.color?.px || m.normal?.px)) manifest = m; })
     .catch(() => { /* no tiles here: the base map is the whole story */ });
 
   /** A 5 x 5 spread of points across a tile, as unit vectors, for testing whether it is in view. */
@@ -215,24 +216,25 @@ export function createScene(canvas, onProgress = () => {}) {
     const tile = { level, x, y, state: 'loading', material: null, used: performance.now(), shown: false };
     tiles.set(key, tile); loading++;
     const url = (kind, ext) => `${TILES}${m.version}/${kind}/${level}/${x}_${y}.${ext}`;
-    Promise.all([bitmaps.loadAsync(url('c', m.color.ext)), bitmaps.loadAsync(url('n', m.normal.ext))]).then(([c, n]) => {
+    // A layer that has not been baked falls back to the base map for that tile.
+    Promise.all([m.color ? bitmaps.loadAsync(url('c', m.color.ext)) : null, m.normal ? bitmaps.loadAsync(url('n', m.normal.ext)) : null]).then(([c, n]) => {
       tile.material = new THREE.ShaderMaterial({
         vertexShader, fragmentShader,
         uniforms: {
           ...uniforms, // the same light, exposure and Earth as the base: shared, not copied
-          uColor: { value: tileTexture(c, true) }, uNormal: { value: tileTexture(n, false) }, uHasNormal: { value: 1 },
-          uTileC: { value: new THREE.Vector4(...tileTransform(level, x, y, m.color.px, m.gutter, false)) },
-          uTileN: { value: new THREE.Vector4(...tileTransform(level, x, y, m.normal.px, m.gutter, false)) },
+          ...(c ? { uColor: { value: tileTexture(c, true) }, uTileC: { value: new THREE.Vector4(...tileTransform(level, x, y, m.color.px, m.gutter, false)) } } : {}),
+          ...(n ? { uNormal: { value: tileTexture(n, false) }, uHasNormal: { value: 1 }, uTileN: { value: new THREE.Vector4(...tileTransform(level, x, y, m.normal.px, m.gutter, false)) } } : {}),
         },
         // Exactly the base's triangles, so depths are equal; the offset makes the finer level win.
         depthFunc: THREE.LessEqualDepth, polygonOffset: true, polygonOffsetFactor: -level, polygonOffsetUnits: -level,
       });
+      tile.own = [c && 'uColor', n && 'uNormal'].filter(Boolean);
       tile.state = 'ready'; lastPick = 0;
     }, () => { tile.state = 'failed'; }).finally(() => { loading--; pump(); });
   }
   function pump() { while (loading < PARALLEL && queue.length) loadTile(queue.shift()); }
   function dropTile(key, tile) {
-    for (const u of ['uColor', 'uNormal']) { const t = tile.material.uniforms[u].value; t.image?.close?.(); t.dispose(); }
+    for (const u of tile.own) { const t = tile.material.uniforms[u].value; t.image?.close?.(); t.dispose(); }
     tile.material.dispose(); tiles.delete(key);
   }
   function updateTiles() {
@@ -241,7 +243,7 @@ export function createScene(canvas, onProgress = () => {}) {
     if (now - lastPick < 120) return;
     lastPick = now;
     const kmPerPx = MOON_RADIUS_KM / (discRadius() * renderer.getPixelRatio());
-    const level = levelNow = pickLevel(kmPerPx, baseTexelKm, manifest.levels, manifest.color.px);
+    const level = levelNow = pickLevel(kmPerPx, baseTexelKm, manifest.levels, (manifest.color ?? manifest.normal).px);
     // Show every loaded tile that is in view and not finer than needed, coarse first so finer ones sit on top.
     const show = [];
     for (const t of tiles.values()) {
@@ -347,5 +349,5 @@ export function createScene(canvas, onProgress = () => {}) {
     const half = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
     return (Math.tan(Math.asin(1 / d)) / half) * (canvas.clientHeight / 2);
   }
-  return { render, project, discRadius, ready, resize, tileStats };
+  return { render, project, discRadius, ready, resize, tileStats, tileManifest: () => manifest };
 }
