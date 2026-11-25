@@ -143,6 +143,30 @@ export function riseSet(date, where) {
   const set = A.SearchRiseSet(A.Body.Moon, o, -1, t, 1.5);
   return { rise: rise?.date ?? null, set: set?.date ?? null };
 }
+const GM_MOON = 4902.800066, GM_SUN = 132712440018; // km^3/s^2
+export const C_KM_S = 299792.458;
+/**
+ * What the Moon is doing at a place on Earth: where it is in that sky, and the vertical part of the
+ * tide-raising acceleration from the Moon and the Sun (the difference between each body's pull at the
+ * place and at the Earth's centre). Positive = upward, in micrometres per second squared.
+ * This is the force that drives tides, not a water height: that depends on coastlines and basins.
+ */
+export function localEffects(date, where) {
+  const time = A.MakeTime(date);
+  const observer = new A.Observer(where.lat, where.lon, where.height ?? 0);
+  const r = scale(arr(A.ObserverVector(time, observer, false)), AU_KM); // Earth centre -> place, EQJ, km
+  const up = arr(A.RotateVector(A.Rotation_HOR_EQJ(time, observer), new A.Vector(0, 0, 1, time)));
+  const lift = (gm, body) => {
+    const d = sub(body, r), ld = len(d), lb = len(body);
+    const a = sub(scale(d, gm / (ld * ld * ld)), scale(body, gm / (lb * lb * lb))); // km/s^2
+    return dot(a, up) * 1e9; // µm/s^2
+  };
+  const moon = lift(GM_MOON, scale(arr(A.GeoMoon(time)), AU_KM));
+  const sun = lift(GM_SUN, scale(arr(A.GeoVector(A.Body.Sun, time, true)), AU_KM));
+  const eq = A.Equator(A.Body.Moon, time, observer, true, true);
+  const h = A.Horizon(time, observer, eq.ra, eq.dec, 'normal');
+  return { altitude: h.altitude, azimuth: h.azimuth, tideMoon: moon, tideSun: sun, tide: moon + sun };
+}
 export function nextApsis(date) {
   const a = A.SearchLunarApsis(A.MakeTime(date));
   return { kind: a.kind === 0 ? 'perigee' : 'apogee', date: a.time.date, km: a.dist_km };
