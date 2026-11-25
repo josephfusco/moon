@@ -1,6 +1,6 @@
 import { createScene } from './scene.js';
 import {
-  moonState, phaseName, phaseIndex, searchPhase, moonAge, riseSet, nextApsis, localEffects, SYNODIC_DAYS, C_KM_S,
+  moonState, phaseName, phaseIndex, zodiac, searchPhase, moonAge, riseSet, nextApsis, localEffects, SYNODIC_DAYS, C_KM_S,
 } from './ephemeris.js';
 import { PHOTOS, FEATURES } from './data/artemis.js';
 import orion from './data/orion.json';
@@ -321,6 +321,9 @@ function almanac(st) {
   rows.push([S.where ? 'Tidal pull where you are' : `Tidal pull in ${HOME.name.split(',')[0]}`, `${Math.abs(fx.tide).toFixed(2)} µm/s² ${fx.tide >= 0 ? 'upward' : 'downward'}`,
     align > 0.9 ? 'Sun and Moon in line: spring tides' : align < 0.42 ? 'Sun and Moon at right angles: neap tides' : 'between spring and neap tides']);
   rows.push(['Libration', `${st.subObserver.lon >= 0 ? '+' : '−'}${Math.abs(st.subObserver.lon).toFixed(1)}° / ${st.subObserver.lat >= 0 ? '+' : '−'}${Math.abs(st.subObserver.lat).toFixed(1)}°`, 'longitude / latitude']);
+  // A tradition, not a measurement, and labelled as one: the sign is the 30° slice of the ecliptic the Moon is in.
+  const z = zodiac(st.eclipticLon);
+  rows.push(['Tropical zodiac', `${z.glyph} ${z.sign}`, `${z.degree.toFixed(1)}° into the sign · a tradition, not the constellation behind it`]);
   const el = $('rows');
   while (el.children.length < rows.length) el.appendChild(Object.assign(document.createElement('div'), { innerHTML: '<span class="k"></span><span class="v"></span><span class="n"></span>' }));
   while (el.children.length > rows.length) el.lastChild.remove();
