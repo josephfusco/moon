@@ -197,7 +197,7 @@ function wake() {
   }, 4000);
 }
 ['pointermove', 'pointerdown', 'keydown', 'wheel', 'focusin'].forEach((ev) => window.addEventListener(ev, wake, { passive: true }));
-wake();
+if (hinted[S.mode]) wake(); // a first-time visitor keeps the controls and the hint until they act
 
 // Dragging: in Earth view you hold the terminator and pull it across the disc; in Explore you orbit.
 const pointers = new Map();

@@ -115,7 +115,7 @@ body.live #live::before { content: ''; display: inline-block; width: 0.4em; heig
 #live { transition: border-color 0.5s, opacity 0.5s; }
 body.idle .modes, body.idle .tools, body.idle #controls { opacity: 0; pointer-events: none; }
 body.idle #date, body.idle #live { border-bottom-color: transparent; }
-body.idle:not(.live) #live { opacity: 0; }
+body.idle:not(.live) #live { opacity: 0; pointer-events: none; }
 @media (prefers-reduced-motion: reduce) { .modes, .tools, #controls, #date, .hint { transition: none; } }
 
 /* Artemis II */
@@ -173,7 +173,7 @@ dialog ul { padding-left: 1.2rem; margin: 0; }
     display: flex; align-items: center; gap: 1.4rem; overflow-x: auto; padding: 0 var(--gutter); scrollbar-width: none;
   }
   #almanac::-webkit-scrollbar { display: none; }
-  #rows { display: flex; gap: 1.4rem; }
+  #rows { display: flex; gap: 1.4rem; flex: none; }
   #rows > div, #btn-where { flex: none; }
   #almanac .v { font-size: 1.1rem; }
   #card {
