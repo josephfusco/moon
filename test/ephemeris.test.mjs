@@ -60,7 +60,7 @@ test('searchPhase finds instants about one synodic month apart', () => {
 });
 
 // Independent check of the tide: the textbook first-order formula for the vertical tidal acceleration,
-// GM r (3 cos²ψ − 1) / d³, with ψ the body's zenith angle seen from the Earth's centre.
+// GM r (3 cos²ψ − 1) / d³, with ψ the body's zenith angle seen from the Earth's center.
 test('tide-raising acceleration agrees with the first-order formula', () => {
   const GM = { moon: 4902.800066, sun: 132712440018 };
   const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];

@@ -2,8 +2,8 @@
 //
 // The Moon map is an equirectangular image: left edge 180°W, right edge 180°E, top edge the north pole.
 // Level L cuts it into 2^L columns and 2^(L-1) rows of square tiles; tile (x, y) counts from the top left.
-// Every tile image carries a border of `gutter` pixels copied from its neighbours, so that smooth
-// sampling at a tile's edge blends into the same pixels its neighbour shows and no seam appears.
+// Every tile image carries a border of `gutter` pixels copied from its neighbors, so that smooth
+// sampling at a tile's edge blends into the same pixels its neighbor shows and no seam appears.
 import { MOON_RADIUS_KM } from './ephemeris.js';
 
 export const cols = (level) => 2 ** level;

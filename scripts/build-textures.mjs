@@ -1,17 +1,17 @@
 // Bake web textures from NASA SVS "CGI Moon Kit" source files (https://svs.gsfc.nasa.gov/4720).
-//   raw/lroc_color_16bit_srgb_8k.tif  LROC WAC Hapke-normalised colour mosaic (2025 version)
-//   raw/ldem_16_uint.tif              LOLA elevation, 16 px/deg, uint16 half-metres, +10 km offset,
+//   raw/lroc_color_16bit_srgb_8k.tif  LROC WAC Hapke-normalized color mosaic (2025 version)
+//   raw/ldem_16_uint.tif              LOLA elevation, 16 px/deg, uint16 half-meters, +10 km offset,
 //                                     relative to a 1737.4 km sphere
 // Run: node scripts/build-textures.mjs
 import sharp from 'sharp';
 import { mkdir, stat, readFile } from 'node:fs/promises';
 
 const OUT = 'public/textures';
-const R = 1737400; // metres
+const R = 1737400; // meters
 export const SLOPE_MAX = 1.0; // slopes are stored as sign(s)*sqrt(|s|/SLOPE_MAX): fine steps on gentle terrain
 await mkdir(OUT, { recursive: true });
 
-// ---- colour ----
+// ---- color ----
 for (const [w, name] of [[8192, 'color_8k'], [4096, 'color_4k'], [2048, 'color_2k']]) {
   await sharp('raw/lroc_color_16bit_srgb_8k.tif', { limitInputPixels: false })
     .resize(w, w / 2, { kernel: 'lanczos3' })
@@ -20,14 +20,14 @@ for (const [w, name] of [[8192, 'color_8k'], [4096, 'color_4k'], [2048, 'color_2
 }
 
 // ---- elevation -> true-scale slope (normal) map ----
-// sharp/libvips tone-maps 16-bit greyscale to 8-bit sRGB, so read the samples directly:
+// sharp/libvips tone-maps 16-bit grayscale to 8-bit sRGB, so read the samples directly:
 // the file is an uncompressed little-endian TIFF whose pixel data starts at byte 8.
 const W = 5760, H = 2880;
 const file = await readFile('raw/ldem_16_uint.tif');
 if (file.readUInt32LE(0) !== 0x002a4949) throw new Error('expected little-endian TIFF');
 const dem = new Uint16Array(W * H);
 for (let i = 0; i < dem.length; i++) dem[i] = file.readUInt16LE(8 + i * 2);
-const h = (x, y) => (dem[Math.min(H - 1, Math.max(0, y)) * W + ((x + W) % W)] - 20000) * 0.5; // metres
+const h = (x, y) => (dem[Math.min(H - 1, Math.max(0, y)) * W + ((x + W) % W)] - 20000) * 0.5; // meters
 const step = (2 * Math.PI) / W; // radians per pixel, both axes
 const enc = (s) => {
   const c = Math.max(-1, Math.min(1, s / SLOPE_MAX));

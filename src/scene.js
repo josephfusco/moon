@@ -18,7 +18,7 @@ const fragmentShader = /* glsl */ `
   uniform sampler2D uColor; uniform sampler2D uNormal;
   uniform float uHasNormal; uniform float uEarthshine; uniform float uExposure; uniform float uFlat;
   uniform vec3 uSun;      // unit vector, Moon -> Sun, body frame
-  uniform vec3 uEarthKm;  // Moon -> Earth centre, body frame, km
+  uniform vec3 uEarthKm;  // Moon -> Earth center, body frame, km
   varying vec3 vDir; varying vec3 vPos; varying vec2 vUv;
   const float R = 1737.4; const float RE = 6378.137; const float RS = 695700.0; const float AU = 149597870.7;
 
@@ -109,7 +109,7 @@ async function displace(geo) {
   ctx.drawImage(img, 0, 0);
   const px = ctx.getImageData(0, 0, cv.width, cv.height).data;
   const W = cv.width, H = cv.height;
-  const metres = (x, y) => {
+  const meters = (x, y) => {
     const i = (Math.min(H - 1, Math.max(0, y)) * W + ((x % W) + W) % W) * 4;
     return ((px[i] << 8 | px[i + 1]) - 20000) * 0.5;
   };
@@ -117,8 +117,8 @@ async function displace(geo) {
   for (let k = 0; k < pos.count; k++) {
     const fx = uv.getX(k) * W - 0.5, fy = (1 - uv.getY(k)) * H - 0.5;
     const x0 = Math.floor(fx), y0 = Math.floor(fy), ax = fx - x0, ay = fy - y0;
-    const h = (metres(x0, y0) * (1 - ax) + metres(x0 + 1, y0) * ax) * (1 - ay)
-      + (metres(x0, y0 + 1) * (1 - ax) + metres(x0 + 1, y0 + 1) * ax) * ay;
+    const h = (meters(x0, y0) * (1 - ax) + meters(x0 + 1, y0) * ax) * (1 - ay)
+      + (meters(x0, y0 + 1) * (1 - ax) + meters(x0 + 1, y0 + 1) * ax) * ay;
     const s = 1 + h / (MOON_RADIUS_KM * 1000);
     pos.setXYZ(k, dir.getX(k) * s, dir.getY(k) * s, dir.getZ(k) * s);
   }
@@ -144,7 +144,7 @@ export function createScene(canvas, onProgress = () => {}) {
   moon.visible = false;
   scene.add(moon);
 
-  // Progressive textures: a small colour map first, then the largest the device can hold.
+  // Progressive textures: a small color map first, then the largest the device can hold.
   const loader = new THREE.TextureLoader();
   const maxTex = renderer.capabilities.maxTextureSize;
   const modest = (navigator.deviceMemory && navigator.deviceMemory <= 4) || Math.min(screen.width, screen.height) < 500;

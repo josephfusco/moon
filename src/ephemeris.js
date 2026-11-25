@@ -37,11 +37,11 @@ const lonLat = (v) => {
 
 /**
  * @param {Date} date
- * @param {{lat:number, lon:number, height?:number}|null} where  null = centre of the Earth
+ * @param {{lat:number, lon:number, height?:number}|null} where  null = center of the Earth
  */
 export function moonState(date, where = null) {
   const time = A.MakeTime(date);
-  const moonGeo = scale(arr(A.GeoMoon(time)), AU_KM); // Earth centre -> Moon, EQJ, km
+  const moonGeo = scale(arr(A.GeoMoon(time)), AU_KM); // Earth center -> Moon, EQJ, km
   const sunGeo = scale(arr(A.GeoVector(A.Body.Sun, time, true)), AU_KM);
 
   let obs = [0, 0, 0];
@@ -148,13 +148,13 @@ export const C_KM_S = 299792.458;
 /**
  * What the Moon is doing at a place on Earth: where it is in that sky, and the vertical part of the
  * tide-raising acceleration from the Moon and the Sun (the difference between each body's pull at the
- * place and at the Earth's centre). Positive = upward, in micrometres per second squared.
+ * place and at the Earth's center). Positive = upward, in micrometers per second squared.
  * This is the force that drives tides, not a water height: that depends on coastlines and basins.
  */
 export function localEffects(date, where) {
   const time = A.MakeTime(date);
   const observer = new A.Observer(where.lat, where.lon, where.height ?? 0);
-  const r = scale(arr(A.ObserverVector(time, observer, false)), AU_KM); // Earth centre -> place, EQJ, km
+  const r = scale(arr(A.ObserverVector(time, observer, false)), AU_KM); // Earth center -> place, EQJ, km
   const up = arr(A.RotateVector(A.Rotation_HOR_EQJ(time, observer), new A.Vector(0, 0, 1, time)));
   const lift = (gm, body) => {
     const d = sub(body, r), ld = len(d), lb = len(body);

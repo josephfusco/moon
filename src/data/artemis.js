@@ -43,7 +43,7 @@ export const PHOTOS = [
     features: [] },
 ].map((p) => ({ ...p, t: Date.parse(p.utc) }));
 
-// Approximate feature centres, degrees, east-positive. Used only to place labels.
+// Approximate feature centers, degrees, east-positive. Used only to place labels.
 export const FEATURES = {
   'Mare Tranquillitatis': [8.5, 31.4], 'Mare Serenitatis': [28.0, 17.5], 'Mare Imbrium': [32.8, -15.6],
   'Mare Crisium': [17.0, 59.1], 'Mare Fecunditatis': [-7.8, 51.3], 'Mare Nectaris': [-15.2, 35.5],

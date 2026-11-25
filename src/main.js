@@ -31,7 +31,7 @@ const S = {
 };
 const view = { dir: null, up: null, distKm: 0, fitKm: 0 };
 // Until a location is shared, the sky and tide rows are worked out for Ithaca, New York. The Moon itself
-// stays Earth-centred (so it still matches NASA's Dial-A-Moon) and nothing is saved.
+// stays Earth-centerd (so it still matches NASA's Dial-A-Moon) and nothing is saved.
 const HOME = { lat: 42.44, lon: -76.5, name: 'Ithaca, New York', tz: 'America/New_York' };
 
 const canvas = $('moon');
@@ -337,7 +337,7 @@ function almanac(st) {
   rows.push([S.where ? 'Tidal pull where you are' : `Tidal pull in ${HOME.name.split(',')[0]}`, `${Math.abs(fx.tide).toFixed(2)} µm/s² ${fx.tide >= 0 ? 'upward' : 'downward'}`,
     align > 0.9 ? 'Sun and Moon in line: spring tides' : align < 0.42 ? 'Sun and Moon at right angles: neap tides' : 'between spring and neap tides']);
   rows.push(['Libration', `${st.subObserver.lon >= 0 ? '+' : '−'}${Math.abs(st.subObserver.lon).toFixed(1)}° / ${st.subObserver.lat >= 0 ? '+' : '−'}${Math.abs(st.subObserver.lat).toFixed(1)}°`, 'longitude / latitude']);
-  // A tradition, not a measurement, and labelled as one: the sign is the 30° slice of the ecliptic the Moon is in.
+  // A tradition, not a measurement, and labeled as one: the sign is the 30° slice of the ecliptic the Moon is in.
   const z = zodiac(st.eclipticLon);
   rows.push(['Tropical zodiac', `${z.glyph} ${z.sign}`, `${z.degree.toFixed(1)}° into the sign · a tradition, not the constellation behind it`]);
   const el = $('rows');
@@ -396,7 +396,7 @@ function frame(now) {
   const date = new Date(S.t);
   // st: what you see from where you stand. While time is being turned quickly, the daily swing of a
   // real location (the disc rotating in the sky, parallax) would make the Moon tumble, so the view
-  // uses the Earth-centre geometry and holds its tilt, then settles to the true local view at rest.
+  // uses the Earth-center geometry and holds its tilt, then settles to the true local view at rest.
   const st = moonState(date, S.mode === 'earth' ? S.where : null);
   const moving = !!(S.tween || S.playing || pointers.size || Math.abs(S.vel) > 1000);
   const sv = S.mode === 'earth' && S.where && moving ? moonState(date, null) : st;
@@ -429,7 +429,7 @@ function frame(now) {
   const f = discFrame();
   view.frame = view.frame ? { cx: view.frame.cx + (f.cx - view.frame.cx) * k, cy: view.frame.cy + (f.cy - view.frame.cy) * k, r: view.frame.r + (f.r - view.frame.r) * k } : f;
 
-  // Auto exposure, as a camera would: open up as the lit part thins towards a crescent.
+  // Auto exposure, as a camera would: open up as the lit part thins toward a crescent.
   const camPhase = Math.acos(Math.max(-1, Math.min(1, dot(view.dir, norm(st.sunB))))) / DEG;
   const x = Math.max(0, Math.min(1, (camPhase - 60) / 100));
   const exposure = 1.3 * (1 + 4 * x * x * (3 - 2 * x));
