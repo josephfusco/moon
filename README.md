@@ -4,7 +4,7 @@ The Moon as it really is right now, for where you are: NASA Lunar Reconnaissance
 laser-measured relief, lit and turned by a real ephemeris. Runs entirely in the browser, works offline,
 and asks nothing of any other site.
 
-Live: https://josephfusco.github.io/moon/
+Live: https://josephfus.co/moon/
 
 ## Run it
 
@@ -35,7 +35,7 @@ exact and what is approximated.
 ## Publish
 
 ```sh
-npm run deploy     # tests, builds, and pushes dist/ to the gh-pages branch
+npm run deploy     # tests, builds, and pushes the site to the gh-pages branch
 ```
 
 ## Checks in a real browser

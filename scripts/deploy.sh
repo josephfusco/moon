@@ -1,5 +1,5 @@
 #!/bin/sh
-# Build the site and publish dist/ to the gh-pages branch of origin (GitHub Pages).
+# Build the site and publish it to the gh-pages branch of origin (GitHub Pages).
 # Detail tiles are baked on this machine from the NASA files in raw/ and are not kept in git, so the
 # site is published from here rather than built by GitHub.
 # Run: npm run deploy
@@ -8,10 +8,11 @@ url=$(git remote get-url origin)
 repo=$(basename "$url" .git)
 [ -f public/tiles/manifest.json ] || { echo "No detail tiles found. Run: npm run tiles"; exit 1; }
 npm test
-npx vite build --base="/$repo/"
-touch dist/.nojekyll
+# Built into its own folder so the local build in dist/ keeps working at the site root.
+npx vite build --base="/$repo/" --outDir .deploy --emptyOutDir
+touch .deploy/.nojekyll
 commit=$(git rev-parse --short HEAD)
-cd dist
+cd .deploy
 rm -rf .git
 git init -q -b gh-pages
 git add -A
