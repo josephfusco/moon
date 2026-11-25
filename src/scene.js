@@ -188,7 +188,8 @@ export function createScene(canvas, onProgress = () => {}) {
     }
     return s;
   }
-  const probe = new THREE.Vector3();
+  const probe = new THREE.Vector3(), viewDir = new THREE.Vector3(), lastDir = new THREE.Vector3();
+  let lastLevel = null;
   /** null if the tile is off screen or on the far side; otherwise how far it is from the screen center. */
   function onScreen(level, x, y) {
     const s = samples(level, x, y);
@@ -255,9 +256,14 @@ export function createScene(canvas, onProgress = () => {}) {
     show.forEach((t, i) => geo.addGroup(mortonIndex(t.level, t.x, t.y) * TILE_INDICES * 4 ** (FINEST - t.level), TILE_INDICES * 4 ** (FINEST - t.level), i));
     detail.material = show.map((t) => t.material);
     detail.visible = show.length > 0;
-    // Ask for what is missing at the needed level, nearest the middle of the screen first.
+    // Ask for what is missing at the needed level, nearest the middle of the screen first, but only once
+    // the view has settled: while it is still flying or zooming, tiles along the way would never be seen.
     queue.length = 0;
-    if (level !== null) {
+    viewDir.copy(camera.position).normalize();
+    const span = (kmPerPx * renderer.domElement.width) / MOON_RADIUS_KM; // roughly the angle across the screen
+    const settled = viewDir.angleTo(lastDir) < span * 0.004 && level === lastLevel; // under about half a percent of the screen per check
+    lastDir.copy(viewDir); lastLevel = level;
+    if (level !== null && settled) {
       const want = [];
       for (let y = 0; y < rows(level); y++) for (let x = 0; x < cols(level); x++) {
         const d = onScreen(level, x, y);
