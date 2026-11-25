@@ -1,6 +1,6 @@
 import { createScene } from './scene.js';
 import {
-  moonState, phaseName, phaseIndex, zodiac, searchPhase, moonAge, riseSet, nextApsis, SYNODIC_DAYS,
+  moonState, phaseName, phaseIndex, searchPhase, moonAge, riseSet, nextApsis, SYNODIC_DAYS,
 } from './ephemeris.js';
 import { PHOTOS, FEATURES } from './data/artemis.js';
 import orion from './data/orion.json';
@@ -69,15 +69,15 @@ function glyph(elong, flip) {
   const lit = e === 0 ? '' : e === 180 ? `M0 ${-r}A${r} ${r} 0 1 1 0 ${r}A${r} ${r} 0 1 1 0 ${-r}`
     : `M0 ${-r}A${r} ${r} 0 0 1 0 ${r}A${rx} ${r} 0 0 ${a > Math.PI / 2 ? 1 : 0} 0 ${-r}`;
   const mirror = waning !== flip ? ' transform="scale(-1 1)"' : '';
-  return `<svg viewBox="-13 -13 26 26" aria-hidden="true"><circle r="${r}" fill="#17161f" stroke="rgba(205,188,255,.35)" stroke-width=".7"/><path d="${lit}" fill="#e9e4f5"${mirror}/></svg>`;
+  return `<svg viewBox="-13 -13 26 26" aria-hidden="true"><circle r="${r}" fill="#1a1a1a" stroke="rgba(255,255,255,.3)" stroke-width=".7"/><path d="${lit}" fill="#e8e8e6"${mirror}/></svg>`;
 }
 const strip = $('strip');
 function buildStrip() {
   strip.querySelectorAll('button').forEach((b) => b.remove());
   STRIP.forEach((name, i) => {
     const b = document.createElement('button');
-    b.innerHTML = `${glyph(i * 45, S.orient === 'south')}<span>${name}</span>`;
-    b.title = `Go to the next ${name.toLowerCase()} moon`;
+    b.innerHTML = glyph(i * 45, S.orient === 'south');
+    b.title = name; b.setAttribute('aria-label', `Go to the next ${name.toLowerCase()} moon`);
     b.onclick = () => {
       const from = new Date((S.tween ? S.tween.to : S.t) + 5 * 60000);
       const hit = searchPhase(i * 45, from, 1);
@@ -253,9 +253,7 @@ function almanac(st) {
     const d = new Date(S.t);
     slow = { age: moonAge(d), full: searchPhase(180, d, 1), neu: searchPhase(0, d, 1), rs: riseSet(d, S.where), apsis: nextApsis(d) };
   }
-  const z = zodiac(st.eclipticLon);
   const rows = [
-    ['Moon in', `${z.glyph} ${z.sign}`, `${z.degree.toFixed(1)}° · tropical zodiac`],
     ['Distance', km(st.distance), slow.apsis ? `${slow.apsis.kind} ${fmtDay.format(slow.apsis.date)}` : ''],
     ['Next full moon', slow.full ? fmtDay.format(slow.full) : '—', ''],
     ['Next new moon', slow.neu ? fmtDay.format(slow.neu) : '—', ''],
@@ -362,13 +360,6 @@ function frame(now) {
   const earthshine = (0.04 * st.earthLit * st.earthLit * 1.3) / exposure;
   S.flat += ((S.mode === 'explore' && S.mapLight ? 1 : 0) - S.flat) * (1 - Math.exp(-dt / 0.25));
   scene.render(view, { sun: st.sunB, earthKm: st.earthB, earthshine, exposure, flat: S.flat });
-
-  // Decorative glow, scaled by how much of the disc is lit.
-  const c = scene.project([0, 0, 0]), r = scene.discRadius();
-  const halo = $('halo');
-  halo.style.opacity = S.mode === 'earth' ? (0.15 + 0.85 * st.illuminated) * Math.max(0, 1.4 - view.zoom) : 0;
-  halo.style.width = halo.style.height = `${r * 3.4}px`;
-  halo.style.transform = `translate(${c.x}px, ${c.y}px) translate(-50%, -50%)`;
 
   if (S.mode === 'artemis') {
     const o = orionAt(S.t), p = nearestPhoto(S.t);
