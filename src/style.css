@@ -105,6 +105,13 @@ body.live #live { display: inline; }
 .hint { margin: 0; font-size: var(--small); color: var(--faint); transition: opacity 0.6s; }
 .hint.gone { opacity: 0; }
 
+/* At rest there is only the Moon and what it is. Controls return the moment you move, touch or type. */
+.modes, .tools, #controls { transition: opacity 0.5s; }
+#date { transition: border-color 0.5s; }
+body.idle .modes, body.idle .tools, body.idle #controls { opacity: 0; pointer-events: none; }
+body.idle #date { border-bottom-color: transparent; }
+@media (prefers-reduced-motion: reduce) { .modes, .tools, #controls, #date, .hint { transition: none; } }
+
 /* Artemis II */
 #artemis { display: none; }
 body[data-mode='artemis'] #artemis { display: contents; }

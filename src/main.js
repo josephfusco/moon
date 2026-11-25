@@ -159,10 +159,36 @@ function setMode(mode) {
   S.mode = mode;
   document.body.dataset.mode = mode;
   document.querySelectorAll('.modes button').forEach((b) => b.setAttribute('aria-selected', b.dataset.mode === mode));
-  $('hint').textContent = mode === 'explore' ? 'Drag to fly around · the night side is truly dark, Map light reveals it' : 'Drag the Moon to turn time';
-  $('hint').classList.remove('gone');
+  showHint();
   almanacAt = NaN; syncButtons();
 }
+
+// The hint teaches one gesture per view and never comes back once you have used it.
+const hinted = store.get('hinted') ?? {};
+function showHint() {
+  const h = $('hint');
+  h.textContent = S.mode === 'explore' ? 'Drag to fly around · the night side is truly dark, Map light reveals it' : 'Drag the Moon to turn time';
+  h.hidden = !!hinted[S.mode]; h.classList.remove('gone');
+}
+function learned() {
+  $('hint').classList.add('gone');
+  if (!hinted[S.mode]) { hinted[S.mode] = true; store.set('hinted', hinted); }
+}
+showHint();
+
+// Controls step back after a few quiet seconds and return on any movement, touch, key or focus.
+let idleTimer = 0;
+function wake() {
+  document.body.classList.remove('idle');
+  clearTimeout(idleTimer);
+  idleTimer = setTimeout(() => {
+    const busy = editing() || $('about').open || document.activeElement !== document.body
+      || document.querySelector('header:hover, #controls:hover');
+    if (busy) wake(); else document.body.classList.add('idle');
+  }, 4000);
+}
+['pointermove', 'pointerdown', 'keydown', 'wheel', 'focusin'].forEach((ev) => window.addEventListener(ev, wake, { passive: true }));
+wake();
 
 // Dragging: in Earth view you hold the terminator and pull it across the disc; in Explore you orbit.
 const pointers = new Map();
@@ -188,7 +214,7 @@ canvas.addEventListener('pointermove', (e) => {
     const k = 0.25 / S.zoom;
     S.lon -= dx * k; S.lat = Math.max(-89, Math.min(89, S.lat + dy * k));
   } else scrub(dx);
-  $('hint').classList.add('gone');
+  learned();
 });
 const release = (e) => {
   pointers.delete(e.pointerId); pinch = 0;
