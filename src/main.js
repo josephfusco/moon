@@ -121,13 +121,26 @@ $('btn-where').onclick = () => {
     store.set('where', S.where); S.orient = 'sky'; almanacAt = NaN; buildStrip(); syncButtons();
   }, () => { syncButtons(); $('btn-where').textContent = 'Location unavailable'; }, { maximumAge: 3600000, timeout: 15000 });
 };
-$('date').onclick = (e) => {
-  e.preventDefault();
+// The date is edited in place: type it, Enter (or leaving the field) goes there, Escape cancels.
+const pick = $('pick');
+const editing = () => document.body.classList.contains('editing');
+$('date').onclick = () => {
+  if (S.mode === 'artemis') return; // the flyby has its own slider and a fixed window
   const d = new Date(S.t - new Date(S.t).getTimezoneOffset() * 60000);
-  $('pick').value = d.toISOString().slice(0, 16);
-  try { $('pick').showPicker(); } catch { $('pick').focus(); }
+  pick.value = pick.dataset.from = d.toISOString().slice(0, 16);
+  document.body.classList.add('editing'); pick.focus();
 };
-$('pick').onchange = () => { const t = new Date($('pick').value).getTime(); if (Number.isFinite(t)) goTo(t, 1.6); };
+function endEdit(commit) {
+  if (!editing()) return;
+  document.body.classList.remove('editing');
+  const t = new Date(pick.value).getTime();
+  if (commit && pick.value !== pick.dataset.from && Number.isFinite(t)) goTo(t, 1.6);
+}
+pick.addEventListener('keydown', (e) => {
+  e.stopPropagation(); // arrows and space belong to the field while it is open
+  if (e.key === 'Enter') { endEdit(true); $('date').focus(); } else if (e.key === 'Escape') { endEdit(false); $('date').focus(); }
+});
+pick.addEventListener('blur', () => endEdit(true));
 
 document.querySelectorAll('.modes button').forEach((b) => { b.onclick = () => setMode(b.dataset.mode); });
 // A mouse click on a control must not park keyboard focus there, or Space would repeat that button

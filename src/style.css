@@ -70,9 +70,17 @@ main > *, #artemis > * { pointer-events: auto; }
 #readout h1 { font: 500 clamp(1.9rem, 3.2vw + 1rem, 3rem)/1.05 var(--sans); margin: 0; letter-spacing: -0.02em; text-wrap: balance; }
 #readout p { margin: 0.4rem 0 0; color: var(--dim); font-variant-numeric: tabular-nums; text-wrap: balance; }
 #when { pointer-events: auto; display: inline-flex; align-items: center; gap: 0.6rem; position: relative; }
-#date { cursor: pointer; border-bottom: 1px solid var(--faint); }
+#date { cursor: pointer; padding: 0; min-height: 0; min-width: 0; color: inherit; border-bottom: 1px solid var(--faint); font-variant-numeric: tabular-nums; }
+body[data-mode='artemis'] #date { cursor: default; border-bottom-color: transparent; }
 #date:hover { color: var(--ink); }
-#pick { position: absolute; left: 50%; bottom: 0; width: 1px; height: 1px; opacity: 0; pointer-events: none; color-scheme: dark; }
+/* Clicking the date turns it into a typed field in the same spot: no calendar pops over the Moon. */
+#pick {
+  display: none; font: inherit; font-variant-numeric: tabular-nums; color: var(--ink); background: none; margin: 0; padding: 0;
+  height: calc(1.45em + 1px); border: 0; border-bottom: 1px solid var(--ink); border-radius: 0;
+  color-scheme: dark; accent-color: var(--ink); -webkit-user-select: text; user-select: text;
+}
+body.editing #pick { display: block; }
+body.editing #date, body.editing #live { display: none; }
 #live { color: var(--ink); display: none; }
 #live::before { content: ''; display: inline-block; width: 0.4em; height: 0.4em; border-radius: 50%; background: var(--ink); margin-right: 0.4em; vertical-align: 0.15em; }
 body.live #live { display: inline; }
