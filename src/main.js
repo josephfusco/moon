@@ -32,7 +32,7 @@ const S = {
 const view = { dir: null, up: null, distKm: 0, fitKm: 0 };
 // Until a location is shared, the sky and tide rows are worked out for Ithaca, New York. The Moon itself
 // stays Earth-centred (so it still matches NASA's Dial-A-Moon) and nothing is saved.
-const HOME = { lat: 42.44, lon: -76.5, name: 'Ithaca, New York' };
+const HOME = { lat: 42.44, lon: -76.5, name: 'Ithaca, New York', tz: 'America/New_York' };
 
 const canvas = $('moon');
 const scene = createScene(canvas);
@@ -291,7 +291,11 @@ function showPhoto(p, t) {
 // ---------- readout ----------
 const cache = new WeakMap();
 function text(el, s) { if (cache.get(el) !== s) { cache.set(el, s); el.textContent = s; } }
-const fmtDate = new Intl.DateTimeFormat(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+const fmtDate = new Intl.DateTimeFormat(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
+// The default place keeps its own clock, so its moonrise is right whatever zone the reader is in.
+const fmtTimeHome = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit', timeZone: HOME.tz });
+const fmtZoneHome = new Intl.DateTimeFormat(undefined, { hour: 'numeric', timeZone: HOME.tz, timeZoneName: 'short' });
+const zoneHome = (d) => fmtZoneHome.formatToParts(d).find((p) => p.type === 'timeZoneName')?.value ?? '';
 const fmtDay = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 const fmtShort = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' });
 const fmtTime = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' });
@@ -313,9 +317,9 @@ function almanac(st) {
     ['Next full moon', slow.full ? fmtDay.format(slow.full) : '—', ''],
     ['Next new moon', slow.neu ? fmtDay.format(slow.neu) : '—', ''],
   ];
-  const fx = localEffects(new Date(S.t), S.where ?? HOME);
+  const fx = localEffects(new Date(S.t), S.where ?? HOME), ft = S.where ? fmtTime : fmtTimeHome;
   rows.push([S.where ? 'In your sky' : `In the sky over ${HOME.name}`, fx.altitude > 0 ? `${fx.altitude.toFixed(0)}° up, ${compass(fx.azimuth)}` : 'Below the horizon',
-    slow.rs ? `rises ${slow.rs.rise ? fmtTime.format(slow.rs.rise) : '—'} · sets ${slow.rs.set ? fmtTime.format(slow.rs.set) : '—'}` : '']);
+    slow.rs ? `rises ${slow.rs.rise ? ft.format(slow.rs.rise) : '—'} · sets ${slow.rs.set ? ft.format(slow.rs.set) : '—'}${S.where ? '' : ` ${zoneHome(new Date(S.t))}`}` : '']);
   // Sun and Moon in line (new or full) add up to spring tides; at right angles (the quarters) they partly cancel.
   const align = Math.abs(Math.cos(st.elongation * DEG));
   rows.push([S.where ? 'Tidal pull where you are' : `Tidal pull in ${HOME.name.split(',')[0]}`, `${Math.abs(fx.tide).toFixed(2)} µm/s² ${fx.tide >= 0 ? 'upward' : 'downward'}`,
