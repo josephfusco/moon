@@ -11,6 +11,7 @@
     "preview": "vite preview",
     "textures": "node scripts/build-textures.mjs",
     "tiles": "node scripts/build-tiles.mjs",
+    "deploy": "sh scripts/deploy.sh",
     "validate": "node scripts/validate.mjs"
   },
   "keywords": [],
