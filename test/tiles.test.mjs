@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { cols, rows, texelKm, tileTransform, tileBounds, tileAt, pickLevel, allTiles } from '../src/tiles.js';
+import { cols, rows, texelKm, tileTransform, tileBounds, tileAt, pickLevel, allTiles, mortonIndex } from '../src/tiles.js';
 
 const near = (a, b, eps = 1e-9) => assert.ok(Math.abs(a - b) < eps, `${a} vs ${b}`);
 // Globe texture coordinate of a place: u from 180°W, v from the south pole.
@@ -17,6 +17,29 @@ test('a tile covers exactly its own image area, inside the gutter', () => {
     near(vT, 1 - g / full); near(vB, 1 - (g + px) / full); // image top row is v = 1
     const [uc, vc] = apply(t, globeUV((b.west + b.east) / 2, (b.north + b.south) / 2));
     near(uc, 0.5); near(vc, 0.5);
+  }
+});
+
+test('an unflipped image maps the same area upside down', () => {
+  const px = 720, g = 1, full = px + 2 * g;
+  for (const [level, x, y] of [[3, 2, 1], [5, 30, 14]]) {
+    const b = tileBounds(level, x, y), t = tileTransform(level, x, y, px, g, false);
+    const [uL, vT] = apply(t, globeUV(b.west, b.north)), [uR, vB] = apply(t, globeUV(b.east, b.south));
+    near(uL, g / full); near(uR, (g + px) / full);
+    near(vT, g / full); near(vB, (g + px) / full); // image top row is v = 0
+  }
+});
+
+test('quadtree numbering: every tile once, children consecutive under their parent', () => {
+  for (const level of [3, 4, 5]) {
+    const seen = new Set();
+    for (let y = 0; y < rows(level); y++) for (let x = 0; x < cols(level); x++) seen.add(mortonIndex(level, x, y));
+    assert.equal(seen.size, cols(level) * rows(level));
+    assert.equal(Math.max(...seen), cols(level) * rows(level) - 1);
+  }
+  for (const [level, x, y] of [[3, 0, 0], [3, 5, 2], [4, 15, 7], [4, 8, 0]]) {
+    const kids = [[0, 0], [1, 0], [0, 1], [1, 1]].map(([a, b]) => mortonIndex(level + 1, 2 * x + a, 2 * y + b)).sort((p, q) => p - q);
+    assert.deepEqual(kids, [0, 1, 2, 3].map((k) => mortonIndex(level, x, y) * 4 + k));
   }
 });
 

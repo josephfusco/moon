@@ -10,6 +10,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "textures": "node scripts/build-textures.mjs",
+    "tiles": "node scripts/build-tiles.mjs",
     "validate": "node scripts/validate.mjs"
   },
   "keywords": [],

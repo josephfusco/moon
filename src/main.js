@@ -459,4 +459,4 @@ function frame(now) {
 }
 syncButtons();
 scene.ready.then(() => requestAnimationFrame(frame));
-window.__moon = { S, goTo, setMode }; // handy in the console
+window.__moon = { S, goTo, setMode, scene }; // handy in the console

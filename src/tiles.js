@@ -16,16 +16,27 @@ export const texelKm = (level, px) => (2 * Math.PI * MOON_RADIUS_KM) / (cols(lev
 /**
  * How to turn the globe's own texture coordinate (u: 0 at 180°W to 1 at 180°E, v: 0 south pole to 1 north
  * pole) into a coordinate inside one tile image: tileUV = globeUV * scale + offset.
- * Returns [offsetU, offsetV, scaleU, scaleV]. Assumes the image is loaded with its top row at v = 1.
+ * Returns [offsetU, offsetV, scaleU, scaleV]. topAtV1 says which way up the image sits on the GPU:
+ * true when its top row is at v = 1 (the usual flipped upload), false when its top row is at v = 0.
  */
-export function tileTransform(level, x, y, px, gutter) {
+export function tileTransform(level, x, y, px, gutter, topAtV1 = true) {
   const full = px + 2 * gutter, c = cols(level), r = rows(level);
-  return [
-    (gutter - x * px) / full,
-    1 - (gutter + (r - y) * px) / full,
-    (c * px) / full,
-    (r * px) / full,
-  ];
+  const offU = (gutter - x * px) / full, sclU = (c * px) / full;
+  const offV = 1 - (gutter + (r - y) * px) / full, sclV = (r * px) / full;
+  return topAtV1 ? [offU, offV, sclU, sclV] : [offU, 1 - offV, sclU, -sclV];
+}
+
+/**
+ * Position of a tile in a quadtree (Z-order) numbering of its level, chosen so that the four children
+ * of any tile are numbered consecutively. The renderer orders the globe's triangles this way, which
+ * lets any tile at any level be drawn as one unbroken run of them.
+ */
+export function mortonIndex(level, x, y) {
+  const bits = level - 1, half = 2 ** bits;
+  const xl = x % half, hi = Math.floor(x / half);
+  let m = 0;
+  for (let b = 0; b < bits; b++) m += (((xl >> b) & 1) + ((y >> b) & 1) * 2) * 4 ** b;
+  return hi * 4 ** bits + m;
 }
 
 /** Longitude and latitude limits of a tile, in degrees. */

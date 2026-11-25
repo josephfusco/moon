@@ -1,4 +1,5 @@
 node_modules
 dist
 raw
+public/tiles
 .DS_Store

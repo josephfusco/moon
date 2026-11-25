@@ -27,14 +27,17 @@ self.addEventListener('fetch', (e) => {
   if (req.method !== 'GET' || url.origin !== location.origin) return;
   e.respondWith((async () => {
     const cache = await caches.open(CACHE);
-    const store = (key, res) => { if (res.ok) cache.put(key, res.clone()); return res; };
+    const html = (res) => (res.headers.get('content-type') ?? '').includes('text/html');
+    // Some servers answer a missing file with the page itself; never save that under an image's name.
+    const store = (key, res) => { if (res.ok && (req.mode === 'navigate' || !html(res))) cache.put(key, res.clone()); return res; };
     // The page: newest when online, the saved copy when not.
     if (req.mode === 'navigate') {
       try { return store(SHELL, await fetch(req)); } catch { return (await cache.match(SHELL)) ?? Response.error(); }
     }
     const hit = await cache.match(req);
-    // Built code has a fingerprint in its name and never changes, so the saved copy is always right.
-    if (hit && url.pathname.includes('/assets/')) return hit;
+    // Built code has a fingerprint in its name, and detail tiles live under a version folder: neither
+    // ever changes, so the saved copy is always right and is never fetched again.
+    if (hit && (url.pathname.includes('/assets/') || url.pathname.includes('/tiles/v'))) return hit;
     // Textures and photos: answer from the device at once, and refresh quietly when online.
     const fresh = fetch(req).then((res) => store(req, res));
     if (hit) { e.waitUntil(fresh.catch(() => {})); return hit; }
