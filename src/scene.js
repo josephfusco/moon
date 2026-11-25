@@ -166,7 +166,9 @@ export function createScene(canvas, onProgress = () => {}) {
   const sampleCache = new Map();
   const queue = [];
   let manifest = null, baseTexelKm = Infinity, lastPick = 0, loading = 0, levelNow = null;
-  const SHOWN_MAX = 40, KEPT_MAX = 72, PARALLEL = 4;
+  // Each tile holds about 7 MB of graphics memory, so phones and small-memory devices keep far fewer.
+  const lowMemory = (navigator.deviceMemory && navigator.deviceMemory <= 4) || Math.min(screen.width, screen.height) < 500;
+  const SHOWN_MAX = lowMemory ? 12 : 32, KEPT_MAX = lowMemory ? 16 : 48, PARALLEL = 4;
   // ?tiles=0 shows the base map alone, for comparing against the detail tiles.
   (new URLSearchParams(location.search).get('tiles') === '0' ? Promise.reject() : fetch(`${TILES}manifest.json`))
     .then((r) => (r.ok && (r.headers.get('content-type') ?? '').includes('json') ? r.json() : null))

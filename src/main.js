@@ -10,8 +10,9 @@ const $ = (id) => document.getElementById(id);
 const DAY = 86400000, DEG = Math.PI / 180;
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const store = {
-  get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
-  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* private mode */ } },
+  // Prefixed: the site may share its address, and so its storage, with other pages.
+  get(k) { try { return JSON.parse(localStorage.getItem(`moon:${k}`)); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem(`moon:${k}`, JSON.stringify(v)); } catch { /* private mode */ } },
 };
 
 // ---------- vectors ----------
