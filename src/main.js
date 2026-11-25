@@ -27,7 +27,7 @@ const startT = Date.parse(Q.get('t') ?? '');
 const S = {
   t: Number.isFinite(startT) ? startT : Date.now(), live: !Number.isFinite(startT), playing: false, vel: 0, tween: null,
   mode: 'earth', orient: store.get('orient') === 'south' ? 'south' : 'north', where: store.get('where'),
-  labels: false, mapLight: false, flat: 0, zoom: 1, lon: 0, lat: 0, earthT: null, roll: null,
+  details: store.get('details') === true, labels: false, mapLight: false, flat: 0, zoom: 1, lon: 0, lat: 0, earthT: null, roll: null,
 };
 const view = { dir: null, up: null, distKm: 0, fitKm: 0 };
 // Until a location is shared, the sky and tide rows are worked out for Ithaca, New York. The Moon itself
@@ -97,7 +97,9 @@ function syncButtons() {
   $('btn-play').textContent = S.playing ? 'Pause' : 'Play';
   document.body.classList.toggle('live', S.live && S.mode !== 'artemis');
   $('btn-orient').textContent = { north: 'North up', south: 'South up', sky: 'As in my sky' }[S.orient];
-  $('btn-where').textContent = S.where ? `${Math.abs(S.where.lat).toFixed(1)}°${S.where.lat >= 0 ? 'N' : 'S'} ${Math.abs(S.where.lon).toFixed(1)}°${S.where.lon >= 0 ? 'E' : 'W'} ✕` : 'My location';
+  $('btn-where').textContent = S.where ? `Stop using my location (${ll(S.where.lat, S.where.lon)})` : 'Use my location';
+  $('btn-details').setAttribute('aria-pressed', S.details);
+  document.body.classList.toggle('details', S.details);
   $('btn-labels').setAttribute('aria-pressed', S.labels);
   $('btn-map').setAttribute('aria-pressed', S.mapLight);
 }
@@ -106,6 +108,7 @@ $('btn-now').onclick = goLive;
 $('btn-prev').onclick = () => nudge(-DAY);
 $('btn-next').onclick = () => nudge(DAY);
 $('btn-map').onclick = () => { S.mapLight = !S.mapLight; syncButtons(); };
+$('btn-details').onclick = () => { S.details = !S.details; store.set('details', S.details); almanacAt = NaN; syncButtons(); };
 $('btn-labels').onclick = () => { S.labels = !S.labels; syncButtons(); };
 $('btn-about').onclick = () => $('about').showModal();
 $('about').addEventListener('click', (e) => { if (e.target === $('about')) $('about').close(); });
@@ -312,7 +315,7 @@ function almanac(st) {
   rows.push([S.where ? 'Tidal pull where you are' : `Tidal pull in ${HOME.name.split(',')[0]}`, `${Math.abs(fx.tide).toFixed(2)} µm/s² ${fx.tide >= 0 ? 'upward' : 'downward'}`,
     align > 0.9 ? 'Sun and Moon in line: spring tides' : align < 0.42 ? 'Sun and Moon at right angles: neap tides' : 'between spring and neap tides']);
   rows.push(['Libration', `${st.subObserver.lon >= 0 ? '+' : '−'}${Math.abs(st.subObserver.lon).toFixed(1)}° / ${st.subObserver.lat >= 0 ? '+' : '−'}${Math.abs(st.subObserver.lat).toFixed(1)}°`, 'longitude / latitude']);
-  const el = $('almanac');
+  const el = $('rows');
   while (el.children.length < rows.length) el.appendChild(Object.assign(document.createElement('div'), { innerHTML: '<span class="k"></span><span class="v"></span><span class="n"></span>' }));
   while (el.children.length > rows.length) el.lastChild.remove();
   rows.forEach((r, i) => { const c = el.children[i].children; text(c[0], r[0]); text(c[1], r[1]); text(c[2], r[2]); });
@@ -339,11 +342,11 @@ function discFrame() {
   const W = innerWidth, H = innerHeight, narrow = W <= 860;
   const top = document.querySelector('header').getBoundingClientRect().bottom + 8;
   let bottom = $('readout').getBoundingClientRect().top - 14, left = 0, right = W;
-  if (narrow && S.mode === 'earth') bottom = Math.min(bottom, $('almanac').getBoundingClientRect().top - 12);
+  if (narrow && S.mode === 'earth' && S.details) bottom = Math.min(bottom, $('almanac').getBoundingClientRect().top - 12);
   if (S.mode === 'artemis') {
     const c = $('card').getBoundingClientRect();
     if (narrow) bottom = Math.min(bottom, c.top - 12); else right = c.left - 16;
-  } else if (!narrow && S.mode === 'earth') left = Math.min(W * 0.2, $('almanac').getBoundingClientRect().right);
+  } else if (!narrow && S.mode === 'earth' && S.details) left = Math.min(W * 0.2, $('almanac').getBoundingClientRect().right);
   const cx = S.mode === 'artemis' && !narrow ? (left + right) / 2 : W / 2;
   const halfW = Math.min(cx - left, right - cx);
   return { cx, cy: (top + bottom) / 2, r: Math.max(60, Math.min((bottom - top) / 2, halfW - 12) * 0.94) };

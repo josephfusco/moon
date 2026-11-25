@@ -21,7 +21,7 @@
       <button role="tab" data-mode="artemis" aria-selected="false">Artemis II</button>
     </nav>
     <div class="tools">
-      <button id="btn-where" title="Use my location for my sky, moonrise and moonset">My location</button>
+      <button id="btn-details" aria-pressed="false" title="Distance, next phases, sky position and tidal pull">Details</button>
       <button id="btn-orient" title="Which way is up">North up</button>
       <button id="btn-map" aria-pressed="false" title="Light the whole Moon evenly, ignoring the Sun">Map light</button>
       <button id="btn-labels" aria-pressed="false" title="Show place names">Names</button>
@@ -37,7 +37,7 @@
         <input id="pick" type="datetime-local" aria-label="Date and time. Enter to go, Escape to cancel" /></p>
     </section>
 
-    <div id="almanac"></div>
+    <div id="almanac"><div id="rows"></div><button id="btn-where" title="Work these out for where you are. Kept in this browser only.">Use my location</button></div>
 
     <section id="controls">
       <div id="strip" role="group" aria-label="Jump to a phase"><i id="cursor"></i></div>

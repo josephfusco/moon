@@ -86,9 +86,11 @@ body.editing #date, body.editing #live { display: none; }
 body.live #live { display: inline; }
 
 #almanac {
-  position: absolute; left: var(--gutter); top: 50%; transform: translateY(-50%); display: grid; gap: 1.1rem; max-width: 16rem;
+  position: absolute; left: var(--gutter); top: 50%; transform: translateY(-50%); display: grid; gap: 0.9rem; justify-items: start; max-width: 16rem;
 }
-#almanac div { display: grid; gap: 1px; }
+#rows { display: grid; gap: 1.1rem; }
+#rows > div { display: grid; gap: 1px; }
+#btn-where { padding: 0; min-height: 0; font-size: var(--small); border-bottom: 1px solid var(--faint); }
 #almanac .k { font-size: var(--small); color: var(--faint); }
 #almanac .v { font-size: 1.3rem; line-height: 1.25; color: var(--ink); font-variant-numeric: tabular-nums; }
 #almanac .n { font-size: var(--small); color: var(--dim); font-variant-numeric: tabular-nums; }
@@ -120,7 +122,7 @@ body[data-mode='artemis'] #readout h1 { font-size: clamp(1.4rem, 1.6vw + 0.9rem,
 body[data-mode='explore'] #almanac { display: none; }
 #btn-map { display: none; }
 body[data-mode='explore'] #btn-map { display: inline-block; }
-body[data-mode='explore'] #btn-where, body[data-mode='explore'] #btn-orient, body[data-mode='artemis'] #btn-where, body[data-mode='artemis'] #btn-orient { display: none; }
+body[data-mode='explore'] #btn-details, body[data-mode='explore'] #btn-orient, body[data-mode='artemis'] #btn-details, body[data-mode='artemis'] #btn-orient { display: none; }
 #card {
   position: absolute; right: var(--gutter); top: 50%; transform: translateY(-54%); width: min(24rem, 30vw);
   background: var(--bg); overflow: hidden;
@@ -164,10 +166,11 @@ dialog ul { padding-left: 1.2rem; margin: 0; }
   .tools { margin-right: -0.6rem; }
   #almanac {
     position: static; transform: none; max-width: none; order: -1; align-self: stretch; margin-bottom: 0.9rem;
-    display: flex; gap: 1.4rem; overflow-x: auto; padding: 0 var(--gutter); scrollbar-width: none;
+    display: flex; align-items: center; gap: 1.4rem; overflow-x: auto; padding: 0 var(--gutter); scrollbar-width: none;
   }
   #almanac::-webkit-scrollbar { display: none; }
-  #almanac div { flex: none; }
+  #rows { display: flex; gap: 1.4rem; }
+  #rows > div, #btn-where { flex: none; }
   #almanac .v { font-size: 1.1rem; }
   #card {
     position: static; transform: none; width: auto; order: -1; align-self: stretch; margin: 0 var(--gutter) 0.9rem;
@@ -184,3 +187,5 @@ dialog ul { padding-left: 1.2rem; margin: 0; }
   #readout h1 { font-size: 1.6rem; }
   #sub { display: none; }
 }
+/* Details are asked for, not assumed. */
+body:not(.details) #almanac { display: none; }
