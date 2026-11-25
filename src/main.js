@@ -283,7 +283,7 @@ function almanac(st) {
     slow.rs ? `rises ${slow.rs.rise ? fmtTime.format(slow.rs.rise) : '—'} · sets ${slow.rs.set ? fmtTime.format(slow.rs.set) : '—'}` : '']);
   // Sun and Moon in line (new or full) add up to spring tides; at right angles (the quarters) they partly cancel.
   const align = Math.abs(Math.cos(st.elongation * DEG));
-  rows.push([S.where ? 'Tidal pull where you are' : 'Tidal pull there', `${Math.abs(fx.tide).toFixed(2)} µm/s² ${fx.tide >= 0 ? 'upward' : 'downward'}`,
+  rows.push([S.where ? 'Tidal pull where you are' : `Tidal pull in ${HOME.name.split(',')[0]}`, `${Math.abs(fx.tide).toFixed(2)} µm/s² ${fx.tide >= 0 ? 'upward' : 'downward'}`,
     align > 0.9 ? 'Sun and Moon in line: spring tides' : align < 0.42 ? 'Sun and Moon at right angles: neap tides' : 'between spring and neap tides']);
   rows.push(['Libration', `${st.subObserver.lon >= 0 ? '+' : '−'}${Math.abs(st.subObserver.lon).toFixed(1)}° / ${st.subObserver.lat >= 0 ? '+' : '−'}${Math.abs(st.subObserver.lat).toFixed(1)}°`, 'longitude / latitude']);
   const el = $('almanac');
