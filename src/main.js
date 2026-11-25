@@ -141,7 +141,7 @@ function endEdit(commit) {
 }
 pick.addEventListener('keydown', (e) => {
   e.stopPropagation(); // arrows and space belong to the field while it is open
-  if (e.key === 'Enter') { endEdit(true); $('date').focus(); } else if (e.key === 'Escape') { endEdit(false); $('date').focus(); }
+  if (e.key === 'Enter') { e.preventDefault(); endEdit(true); $('date').focus(); } else if (e.key === 'Escape') { endEdit(false); $('date').focus(); }
 });
 pick.addEventListener('blur', () => endEdit(true));
 
