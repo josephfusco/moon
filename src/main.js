@@ -96,6 +96,8 @@ function syncButtons() {
   $('btn-play').setAttribute('aria-pressed', S.playing);
   $('btn-play').textContent = S.playing ? 'Pause' : 'Play';
   document.body.classList.toggle('live', S.live && S.mode !== 'artemis');
+  $('live').textContent = S.live ? 'live' : 'Now';
+  $('live').title = S.live ? 'Showing the Moon as it is right now' : 'Return to the present';
   $('btn-orient').textContent = { north: 'North up', south: 'South up', sky: 'As in my sky' }[S.orient];
   $('btn-where').textContent = S.where ? `Stop using my location (${ll(S.where.lat, S.where.lon)})` : 'Use my location';
   $('btn-details').setAttribute('aria-pressed', S.details);
@@ -104,7 +106,7 @@ function syncButtons() {
   $('btn-map').setAttribute('aria-pressed', S.mapLight);
 }
 $('btn-play').onclick = () => { S.playing = !S.playing; S.live = false; S.tween = null; S.vel = 0; syncButtons(); };
-$('btn-now').onclick = goLive;
+$('live').onclick = () => { if (!S.live) goLive(); };
 $('btn-prev').onclick = () => nudge(-DAY);
 $('btn-next').onclick = () => nudge(DAY);
 $('btn-map').onclick = () => { S.mapLight = !S.mapLight; syncButtons(); };
@@ -130,8 +132,10 @@ $('btn-where').onclick = () => {
 // The date is edited in place: type it, Enter (or leaving the field) goes there, Escape cancels.
 const pick = $('pick');
 const editing = () => document.body.classList.contains('editing');
-$('date').onclick = () => {
-  if (S.mode === 'artemis') return; // the flyby has its own slider and a fixed window
+let dateByKey = false;
+$('date').onclick = (e) => {
+  if (S.mode === 'artemis') return;
+  dateByKey = e.detail === 0; // opened from the keyboard: hand focus back afterwards // the flyby has its own slider and a fixed window
   const d = new Date(S.t - new Date(S.t).getTimezoneOffset() * 60000);
   pick.value = pick.dataset.from = d.toISOString().slice(0, 16);
   document.body.classList.add('editing'); pick.focus();
@@ -144,14 +148,16 @@ function endEdit(commit) {
 }
 pick.addEventListener('keydown', (e) => {
   e.stopPropagation(); // arrows and space belong to the field while it is open
-  if (e.key === 'Enter') { e.preventDefault(); endEdit(true); $('date').focus(); } else if (e.key === 'Escape') { endEdit(false); $('date').focus(); }
+  if (e.key !== 'Enter' && e.key !== 'Escape') return;
+  e.preventDefault(); endEdit(e.key === 'Enter');
+  if (dateByKey) $('date').focus(); else pick.blur();
 });
 pick.addEventListener('blur', () => endEdit(true));
 
 document.querySelectorAll('.modes button').forEach((b) => { b.onclick = () => setMode(b.dataset.mode); });
 // A mouse click on a control must not park keyboard focus there, or Space would repeat that button
 // instead of play/pause. Tab focus still works; the click still fires.
-document.addEventListener('mousedown', (e) => { if (e.target.closest('button, #date') && !e.target.closest('dialog')) e.preventDefault(); });
+document.addEventListener('mousedown', (e) => { if (e.target.closest('button') && !e.target.closest('dialog')) e.preventDefault(); });
 function setMode(mode) {
   if (mode === S.mode) return;
   if (S.mode !== 'artemis') S.earthT = { t: S.t, live: S.live };

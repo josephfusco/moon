@@ -81,9 +81,11 @@ body[data-mode='artemis'] #date { cursor: default; border-bottom-color: transpar
 }
 body.editing #pick { display: block; }
 body.editing #date, body.editing #live { display: none; }
-#live { color: var(--ink); display: none; }
-#live::before { content: ''; display: inline-block; width: 0.4em; height: 0.4em; border-radius: 50%; background: var(--ink); margin-right: 0.4em; vertical-align: 0.15em; }
-body.live #live { display: inline; }
+/* One slot, two states: it says "live" while the clock is real, and offers "Now" once you have left the present. */
+#live { padding: 0; min-height: 0; min-width: 0; border-bottom: 1px solid var(--faint); transition: border-color 0.5s; }
+body.live #live { color: var(--ink); border-bottom-color: transparent; cursor: default; }
+body[data-mode='artemis'] #live { display: none; }
+body.live #live::before { content: ''; display: inline-block; width: 0.4em; height: 0.4em; border-radius: 50%; background: var(--ink); margin-right: 0.4em; vertical-align: 0.15em; }
 
 #almanac {
   position: absolute; left: var(--gutter); top: 50%; transform: translateY(-50%); display: grid; gap: 0.9rem; justify-items: start; max-width: 16rem;
@@ -110,8 +112,10 @@ body.live #live { display: inline; }
 /* At rest there is only the Moon and what it is. Controls return the moment you move, touch or type. */
 .modes, .tools, #controls { transition: opacity 0.5s; }
 #date { transition: border-color 0.5s; }
+#live { transition: border-color 0.5s, opacity 0.5s; }
 body.idle .modes, body.idle .tools, body.idle #controls { opacity: 0; pointer-events: none; }
-body.idle #date { border-bottom-color: transparent; }
+body.idle #date, body.idle #live { border-bottom-color: transparent; }
+body.idle:not(.live) #live { opacity: 0; }
 @media (prefers-reduced-motion: reduce) { .modes, .tools, #controls, #date, .hint { transition: none; } }
 
 /* Artemis II */
