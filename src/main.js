@@ -35,7 +35,19 @@ const view = { dir: null, up: null, distKm: 0, fitKm: 0 };
 const HOME = { lat: 42.44, lon: -76.5, name: 'Ithaca, New York', tz: 'America/New_York' };
 
 const canvas = $('moon');
-const scene = createScene(canvas);
+const scene = createScene(canvas, (stage) => { if (stage !== 'preview') keepOffline(); });
+
+// ---------- offline: built site only, never the dev server ----------
+function keepOffline() {
+  if (!import.meta.env.PROD || !('serviceWorker' in navigator)) return;
+  const base = new URL(import.meta.env.BASE_URL, location.href).href;
+  navigator.serviceWorker.register(`${base}sw.js`).then(() => navigator.serviceWorker.ready).then((reg) => {
+    const used = performance.getEntriesByType('resource').map((r) => r.name).filter((u) => u.startsWith(base));
+    const photos = PHOTOS.flatMap((p) => [`${base}artemis/${p.id}.jpg`, `${base}artemis/thumb/${p.id}.jpg`]);
+    const extra = ['manifest.webmanifest', 'icon-192.png', 'icon-512.png'].map((f) => base + f);
+    reg.active?.postMessage({ keep: [...new Set([base, ...used, ...photos, ...extra])] });
+  }).catch(() => { /* offline support is a bonus; the app works without it */ });
+}
 
 // ---------- Orion's trajectory (JPL Horizons) ----------
 const T0 = orion.rows[0][0] * 1000, T1 = orion.rows[orion.rows.length - 1][0] * 1000;
