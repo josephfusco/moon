@@ -1,6 +1,6 @@
 import { createScene } from './scene.js';
 import {
-  moonState, phaseName, phaseIndex, searchPhase, moonAge, riseSet, nextApsis, SYNODIC_DAYS,
+  moonState, phaseName, phaseIndex, searchPhase, moonAge, riseSet, nextApsis, localEffects, SYNODIC_DAYS, C_KM_S,
 } from './ephemeris.js';
 import { PHOTOS, FEATURES } from './data/artemis.js';
 import orion from './data/orion.json';
@@ -30,6 +30,9 @@ const S = {
   labels: false, mapLight: false, flat: 0, zoom: 1, lon: 0, lat: 0, earthT: null, roll: null,
 };
 const view = { dir: null, up: null, distKm: 0, fitKm: 0 };
+// Until a location is shared, the sky and tide rows are worked out for Ithaca, New York. The Moon itself
+// stays Earth-centred (so it still matches NASA's Dial-A-Moon) and nothing is saved.
+const HOME = { lat: 42.44, lon: -76.5, name: 'Ithaca, New York' };
 
 const canvas = $('moon');
 const scene = createScene(canvas);
@@ -255,6 +258,7 @@ const cache = new WeakMap();
 function text(el, s) { if (cache.get(el) !== s) { cache.set(el, s); el.textContent = s; } }
 const fmtDate = new Intl.DateTimeFormat(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
 const fmtDay = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+const fmtShort = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' });
 const fmtTime = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' });
 const fmtUTC = new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
 const km = (v) => `${Math.round(v).toLocaleString()} km`;
@@ -267,17 +271,20 @@ function almanac(st) {
   if (!(Math.abs(S.t - almanacAt) < 600000) && now - almanacWall > 140) {
     almanacAt = S.t; almanacWall = now;
     const d = new Date(S.t);
-    slow = { age: moonAge(d), full: searchPhase(180, d, 1), neu: searchPhase(0, d, 1), rs: riseSet(d, S.where), apsis: nextApsis(d) };
+    slow = { age: moonAge(d), full: searchPhase(180, d, 1), neu: searchPhase(0, d, 1), rs: riseSet(d, S.where ?? HOME), apsis: nextApsis(d) };
   }
   const rows = [
-    ['Distance', km(st.distance), slow.apsis ? `${slow.apsis.kind} ${fmtDay.format(slow.apsis.date)}` : ''],
+    ['Distance', km(st.distance), `${(st.distance / C_KM_S).toFixed(2)} s at light speed${slow.apsis ? ` · ${slow.apsis.kind} ${fmtShort.format(slow.apsis.date)}` : ''}`],
     ['Next full moon', slow.full ? fmtDay.format(slow.full) : '—', ''],
     ['Next new moon', slow.neu ? fmtDay.format(slow.neu) : '—', ''],
   ];
-  if (S.where && st.horizon) {
-    rows.push(['In your sky', st.horizon.altitude > 0 ? `${st.horizon.altitude.toFixed(0)}° up, ${compass(st.horizon.azimuth)}` : 'Below the horizon',
-      slow.rs ? `rises ${slow.rs.rise ? fmtTime.format(slow.rs.rise) : '—'} · sets ${slow.rs.set ? fmtTime.format(slow.rs.set) : '—'}` : '']);
-  }
+  const fx = localEffects(new Date(S.t), S.where ?? HOME);
+  rows.push([S.where ? 'In your sky' : `In the sky over ${HOME.name}`, fx.altitude > 0 ? `${fx.altitude.toFixed(0)}° up, ${compass(fx.azimuth)}` : 'Below the horizon',
+    slow.rs ? `rises ${slow.rs.rise ? fmtTime.format(slow.rs.rise) : '—'} · sets ${slow.rs.set ? fmtTime.format(slow.rs.set) : '—'}` : '']);
+  // Sun and Moon in line (new or full) add up to spring tides; at right angles (the quarters) they partly cancel.
+  const align = Math.abs(Math.cos(st.elongation * DEG));
+  rows.push([S.where ? 'Tidal pull where you are' : 'Tidal pull there', `${Math.abs(fx.tide).toFixed(2)} µm/s² ${fx.tide >= 0 ? 'upward' : 'downward'}`,
+    align > 0.9 ? 'Sun and Moon in line: spring tides' : align < 0.42 ? 'Sun and Moon at right angles: neap tides' : 'between spring and neap tides']);
   rows.push(['Libration', `${st.subObserver.lon >= 0 ? '+' : '−'}${Math.abs(st.subObserver.lon).toFixed(1)}° / ${st.subObserver.lat >= 0 ? '+' : '−'}${Math.abs(st.subObserver.lat).toFixed(1)}°`, 'longitude / latitude']);
   const el = $('almanac');
   while (el.children.length < rows.length) el.appendChild(Object.assign(document.createElement('div'), { innerHTML: '<span class="k"></span><span class="v"></span><span class="n"></span>' }));
