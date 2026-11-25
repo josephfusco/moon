@@ -130,6 +130,9 @@ $('date').onclick = (e) => {
 $('pick').onchange = () => { const t = new Date($('pick').value).getTime(); if (Number.isFinite(t)) goTo(t, 1.6); };
 
 document.querySelectorAll('.modes button').forEach((b) => { b.onclick = () => setMode(b.dataset.mode); });
+// A mouse click on a control must not park keyboard focus there, or Space would repeat that button
+// instead of play/pause. Tab focus still works; the click still fires.
+document.addEventListener('mousedown', (e) => { if (e.target.closest('button, #date') && !e.target.closest('dialog')) e.preventDefault(); });
 function setMode(mode) {
   if (mode === S.mode) return;
   if (S.mode !== 'artemis') S.earthT = { t: S.t, live: S.live };

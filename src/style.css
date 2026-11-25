@@ -16,7 +16,14 @@ body {
   height: 100%; margin: 0; background: var(--bg);
   color: var(--ink); font: 1rem/1.45 var(--sans); overflow: hidden;
   -webkit-font-smoothing: antialiased; -webkit-text-size-adjust: 100%; overscroll-behavior: none;
+  /* The interface is an instrument, not a document: nothing selects or highlights by accident.
+     Only real reading matter (the figures, photo captions, the About text) can be selected. */
+  -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent;
 }
+#almanac .v, #almanac .n, #sub, .card-body, dialog { -webkit-user-select: text; user-select: text; }
+dialog button { -webkit-user-select: none; user-select: none; }
+img, svg { -webkit-user-drag: none; }
+canvas#moon, img { -webkit-touch-callout: none; }
 canvas#moon { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
 canvas#moon.dragging { cursor: grabbing; }
 #labels { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
