@@ -73,19 +73,54 @@ main > *, #artemis > * { pointer-events: auto; }
 #date { cursor: pointer; padding: 0; min-height: 0; min-width: 0; color: inherit; border-bottom: 1px solid var(--faint); font-variant-numeric: tabular-nums; }
 body[data-mode='artemis'] #date { cursor: default; border-bottom-color: transparent; }
 #date:hover { color: var(--ink); }
-/* Clicking the date turns it into a typed field in the same spot: no calendar pops over the Moon. */
-#pick {
-  display: none; font: inherit; font-variant-numeric: tabular-nums; color: var(--ink); background: none; margin: 0; padding: 0;
-  height: calc(1.45em + 1px); border: 0; border-bottom: 1px solid var(--ink); border-radius: 0;
-  color-scheme: dark; accent-color: var(--ink); -webkit-user-select: text; user-select: text;
-}
-body.editing #pick { display: block; }
-body.editing #date, body.editing #live { display: none; }
 /* One slot, two states: it says "live" while the clock is real, and offers "Now" once you have left the present. */
 #live { padding: 0; min-height: 0; min-width: 0; border-bottom: 1px solid var(--faint); transition: border-color 0.5s; }
 body.live #live { color: var(--ink); border-bottom-color: transparent; cursor: default; }
 body[data-mode='artemis'] #live { display: none; }
 body.live #live::before { content: ''; display: inline-block; width: 0.4em; height: 0.4em; border-radius: 50%; background: var(--ink); margin-right: 0.4em; vertical-align: 0.15em; }
+
+/* The date opens a calendar of Moons: each day carries its phase. It stands beside the Moon where there
+   is room and rises from the bottom edge where there is not, so the Moon stays in view while you choose. */
+#picker {
+  position: fixed; z-index: 4; left: 50%; bottom: max(0.75rem, env(safe-area-inset-bottom)); transform: translateX(-50%);
+  width: min(21rem, calc(100vw - 1.5rem)); max-height: calc(100dvh - 1.5rem); overflow-y: auto; overscroll-behavior: contain;
+  padding: 0.6rem 0.75rem 0.5rem; background: #0b0b0b; border: 1px solid var(--line);
+  font-variant-numeric: tabular-nums;
+}
+#picker[hidden] { display: none; }
+#picker button { min-width: 0; }
+#picker input {
+  font: inherit; color: var(--ink); background: none; margin: 0; padding: 0; border: 0; border-bottom: 1px solid var(--faint);
+  border-radius: 0; font-variant-numeric: tabular-nums; -webkit-user-select: text; user-select: text;
+}
+#picker input:focus { border-bottom-color: var(--ink); outline: 0; }
+.pk-head { display: flex; align-items: center; justify-content: space-between; font-weight: 500; }
+.pk-head button { display: grid; place-items: center; padding: 0.5rem 0.7rem; }
+.pk-head svg { width: 0.8rem; height: 0.8rem; display: block; }
+#pk-year { width: 4.6ch; text-align: center; font-weight: 500; }
+#pk-dow, #pk-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
+#pk-dow { font-size: var(--small); color: var(--faint); text-align: center; padding: 0.2rem 0 0.25rem; }
+#pk-grid button { display: grid; justify-items: center; align-content: center; gap: 0.2rem; padding: 0.35rem 0; font-size: var(--small); line-height: 1; }
+#pk-grid svg { width: 1.15rem; height: 1.15rem; display: block; }
+#pk-grid .out { opacity: 0.38; }
+#pk-grid .out:hover { opacity: 1; }
+#pk-grid .today { color: var(--ink); font-weight: 700; }
+#pk-grid .sel { color: var(--ink); background: rgba(255, 255, 255, 0.16); }
+#pk-grid button:focus-visible { outline-offset: -1px; }
+.pk-foot { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.35rem; padding-top: 0.35rem; border-top: 1px solid var(--line); }
+#pk-time { width: 8ch; }
+#pk-zone { color: var(--faint); font-size: var(--small); margin-right: auto; }
+.pk-foot button { padding: 0.5rem 0.6rem; }
+#pk-done { color: var(--ink); margin-right: -0.6rem; }
+@media (min-width: 1100px) and (min-height: 521px) {
+  #picker { left: auto; right: var(--gutter); bottom: auto; top: 50%; transform: translateY(-50%); }
+}
+/* A phone on its side: beside the Moon, with the day and its phase on one line to save height. */
+@media (max-height: 520px) and (min-width: 560px) {
+  #picker { left: auto; right: var(--gutter); transform: none; width: 20rem; }
+  #pk-grid button { grid-auto-flow: column; justify-content: center; align-items: center; gap: 0.25rem; padding: 0.3rem 0; min-height: 2.1rem; }
+  #pk-grid svg { width: 0.9rem; height: 0.9rem; }
+}
 
 #almanac {
   position: absolute; left: var(--gutter); top: 50%; transform: translateY(-50%); display: grid; gap: 0.9rem; justify-items: start; max-width: 16rem;

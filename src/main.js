@@ -1,6 +1,6 @@
 import { createScene } from './scene.js';
 import {
-  moonState, phaseName, phaseIndex, zodiac, searchPhase, moonAge, riseSet, nextApsis, localEffects, SYNODIC_DAYS, C_KM_S,
+  moonState, elongationAt, phaseName, phaseIndex, zodiac, searchPhase, moonAge, riseSet, nextApsis, localEffects, SYNODIC_DAYS, C_KM_S,
 } from './ephemeris.js';
 import { PHOTOS, FEATURES } from './data/artemis.js';
 import { allTiles } from './tiles.js';
@@ -180,30 +180,119 @@ $('btn-where').onclick = () => {
     store.set('where', S.where); S.orient = 'sky'; almanacAt = NaN; buildStrip(); syncButtons();
   }, () => { syncButtons(); $('btn-where').textContent = 'Location unavailable'; }, { maximumAge: 3600000, timeout: 15000 });
 };
-// The date is edited in place: type it, Enter (or leaving the field) goes there, Escape cancels.
-const pick = $('pick');
-const editing = () => document.body.classList.contains('editing');
-let dateByKey = false;
-$('date').onclick = (e) => {
-  if (S.mode === 'artemis') return;
-  dateByKey = e.detail === 0; // opened from the keyboard: hand focus back afterwards // the flyby has its own slider and a fixed window
-  const d = new Date(S.t - new Date(S.t).getTimezoneOffset() * 60000);
-  pick.value = pick.dataset.from = d.toISOString().slice(0, 16);
-  document.body.classList.add('editing'); pick.focus();
+// The date opens a calendar of Moons. Every day shows its phase; choosing one takes the Moon there and
+// the calendar stays open, so days can be tried one after another. Escape, Done or a click elsewhere closes it.
+const picker = $('picker'), grid = $('pk-grid');
+const editing = () => !picker.hidden;
+const target = () => (S.tween ? S.tween.to : S.t);
+const at = (y, m, d, h = 12, min = 0) => { const x = new Date(2000, 0, 1, h, min); x.setFullYear(y, m, d); return x; };
+const sameDay = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+const WEEK0 = (() => { try { const l = new Intl.Locale(navigator.language); return ((l.getWeekInfo?.() ?? l.weekInfo)?.firstDay ?? 7) % 7; } catch { return 0; } })();
+const HOUR12 = new Intl.DateTimeFormat(undefined, { hour: 'numeric' }).resolvedOptions().hour12;
+const fmtMonth = new Intl.DateTimeFormat(undefined, { month: 'long' });
+const fmtCell = new Intl.DateTimeFormat(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+const fmtZone = new Intl.DateTimeFormat(undefined, { hour: 'numeric', timeZoneName: 'short' });
+const showTime = (d) => {
+  const h = d.getHours(), mm = String(d.getMinutes()).padStart(2, '0');
+  return HOUR12 ? `${h % 12 || 12}:${mm} ${h < 12 ? 'AM' : 'PM'}` : `${String(h).padStart(2, '0')}:${mm}`;
 };
-function endEdit(commit) {
-  if (!editing()) return;
-  document.body.classList.remove('editing');
-  const t = new Date(pick.value).getTime();
-  if (commit && pick.value !== pick.dataset.from && Number.isFinite(t)) goTo(t, 1.6);
+/** Reads 9:30 PM, 9pm, 21:30 or 2130. */
+function parseTime(s) {
+  const m = /^\s*(\d{1,2})(?:[:.\s]?(\d{2}))?\s*(a|p)?\.?\s*m?\.?\s*$/i.exec(s);
+  if (!m) return null;
+  let h = +m[1]; const min = +(m[2] ?? 0), ap = m[3]?.toLowerCase();
+  if (ap) { if (h < 1 || h > 12) return null; h = (h % 12) + (ap === 'p' ? 12 : 0); }
+  return h > 23 || min > 59 ? null : { h, min };
 }
-pick.addEventListener('keydown', (e) => {
-  e.stopPropagation(); // arrows and space belong to the field while it is open
-  if (e.key !== 'Enter' && e.key !== 'Escape') return;
-  e.preventDefault(); endEdit(e.key === 'Enter');
-  if (dateByKey) $('date').focus(); else pick.blur();
+let pk = { y: 2000, m: 0, focus: new Date() };
+{ const narrow = new Intl.DateTimeFormat(undefined, { weekday: 'narrow' });
+  $('pk-dow').innerHTML = Array.from({ length: 7 }, (_, i) => `<span>${narrow.format(new Date(2023, 0, 1 + WEEK0 + i))}</span>`).join(''); } // 1 Jan 2023 was a Sunday
+const cells = Array.from({ length: 42 }, () => {
+  const b = document.createElement('button');
+  b.onclick = () => pickDay(b.day);
+  return grid.appendChild(b);
 });
-pick.addEventListener('blur', () => endEdit(true));
+function drawPicker() {
+  const sel = new Date(target()), now = new Date();
+  $('pk-month').textContent = fmtMonth.format(at(pk.y, pk.m, 1));
+  if (document.activeElement !== $('pk-year')) $('pk-year').value = pk.y;
+  const lead = (at(pk.y, pk.m, 1).getDay() - WEEK0 + 7) % 7;
+  cells.forEach((b, i) => {
+    const d = b.day = at(pk.y, pk.m, 1 - lead + i), e = elongationAt(d); // the phase at local noon
+    b.innerHTML = `<span>${d.getDate()}</span>${glyph(e, S.orient === 'south')}`;
+    b.setAttribute('aria-label', `${fmtCell.format(d)}, ${phaseName(e).toLowerCase()}`);
+    b.className = `${d.getMonth() !== pk.m ? 'out ' : ''}${sameDay(d, now) ? 'today ' : ''}${sameDay(d, sel) ? 'sel' : ''}`;
+    if (sameDay(d, sel)) b.setAttribute('aria-current', 'date'); else b.removeAttribute('aria-current');
+    b.tabIndex = sameDay(d, pk.focus) ? 0 : -1;
+  });
+  $('pk-time').value = $('pk-time').dataset.shown = showTime(sel);
+  $('pk-zone').textContent = fmtZone.formatToParts(sel).find((p) => p.type === 'timeZoneName')?.value ?? '';
+}
+const focusDay = () => cells.find((b) => b.tabIndex === 0)?.focus({ preventScroll: true });
+function showMonth(y, m) {
+  const d = at(y, m, 1); if (d.getFullYear() < 1 || d.getFullYear() > 9999) return;
+  const day = Math.min(pk.focus.getDate(), at(y, m + 1, 0).getDate());
+  pk = { y: d.getFullYear(), m: d.getMonth(), focus: at(d.getFullYear(), d.getMonth(), day) };
+  drawPicker();
+}
+function pickDay(d, h, min) {
+  const cur = new Date(target());
+  pk = { y: d.getFullYear(), m: d.getMonth(), focus: d };
+  goTo(at(pk.y, pk.m, d.getDate(), h ?? cur.getHours(), min ?? cur.getMinutes()).getTime(), 1.2);
+  drawPicker();
+}
+function applyTime() {
+  const f = $('pk-time'); if (f.value === f.dataset.shown) return;
+  const v = parseTime(f.value);
+  if (v) pickDay(new Date(target()), v.h, v.min); else f.value = f.dataset.shown;
+}
+function openPicker() {
+  const d = new Date(target());
+  pk = { y: d.getFullYear(), m: d.getMonth(), focus: d };
+  picker.hidden = false; document.body.classList.add('editing'); $('date').setAttribute('aria-expanded', true);
+  drawPicker(); focusDay();
+}
+function closePicker(refocus) {
+  if (!editing()) return;
+  applyTime();
+  picker.hidden = true; document.body.classList.remove('editing'); $('date').setAttribute('aria-expanded', false);
+  if (refocus) $('date').focus(); else document.activeElement?.blur();
+}
+$('date').onclick = (e) => {
+  if (S.mode === 'artemis') return; // the flyby has its own slider and a fixed window
+  if (editing()) closePicker(e.detail === 0); else openPicker();
+};
+$('pk-prev').onclick = () => showMonth(pk.y, pk.m - 1);
+$('pk-next').onclick = () => showMonth(pk.y, pk.m + 1);
+$('pk-now').onclick = () => { $('pk-time').value = $('pk-time').dataset.shown; closePicker(); goLive(); };
+$('pk-done').onclick = () => closePicker();
+$('pk-year').oninput = (e) => { const y = +e.target.value; if (/^\d{4}$/.test(e.target.value) && y >= 1) showMonth(y, pk.m); };
+$('pk-year').onblur = (e) => { e.target.value = pk.y; };
+$('pk-time').onchange = applyTime;
+picker.addEventListener('keydown', (e) => {
+  e.stopPropagation(); // arrows, Space and N belong to the calendar while it is open
+  if (e.key === 'Escape') { e.preventDefault(); $('pk-time').value = $('pk-time').dataset.shown; closePicker(true); return; }
+  if (e.target.matches('input')) {
+    if (e.key === 'Enter') { e.preventDefault(); if (e.target.id === 'pk-time') applyTime(); focusDay(); }
+    return;
+  }
+  if (!grid.contains(e.target)) return;
+  const f = pk.focus, step = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 }[e.key];
+  let to = null;
+  if (step) to = at(f.getFullYear(), f.getMonth(), f.getDate() + step);
+  else if (e.key === 'PageUp' || e.key === 'PageDown') {
+    const m = f.getMonth() + (e.key === 'PageUp' ? -1 : 1) * (e.shiftKey ? 12 : 1);
+    to = at(f.getFullYear(), m, Math.min(f.getDate(), at(f.getFullYear(), m + 1, 0).getDate()));
+  }
+  if (!to || to.getFullYear() < 1 || to.getFullYear() > 9999) return;
+  e.preventDefault();
+  pk = { y: to.getFullYear(), m: to.getMonth(), focus: to };
+  drawPicker(); focusDay();
+});
+// A press on the calendar's own background must not drop focus; a press anywhere else closes it.
+picker.addEventListener('mousedown', (e) => { if (!e.target.closest('input')) e.preventDefault(); });
+document.addEventListener('pointerdown', (e) => { if (editing() && !picker.contains(e.target) && e.target !== $('date')) closePicker(); }, true);
+picker.addEventListener('focusout', (e) => { if (e.relatedTarget && !picker.contains(e.relatedTarget) && e.relatedTarget !== $('date')) closePicker(); });
 
 document.querySelectorAll('.modes button').forEach((b) => { b.onclick = () => setMode(b.dataset.mode); });
 // A mouse click on a control must not park keyboard focus there, or Space would repeat that button
@@ -216,6 +305,7 @@ function setMode(mode) {
   if (mode === 'explore' && S.mode === 'artemis') { const o = orionAt(S.t); S.lon = o.lon; S.lat = o.lat; }
   S.playing = false; S.tween = null; S.vel = 0; S.zoom = 1;
   if (mode === 'artemis') { S.live = false; S.t = PHOTOS[7].t; } else if (S.mode === 'artemis' && S.earthT) { S.t = S.earthT.t; S.live = S.earthT.live; }
+  closePicker();
   S.mode = mode;
   document.body.dataset.mode = mode;
   document.querySelectorAll('.modes button').forEach((b) => b.setAttribute('aria-selected', b.dataset.mode === mode));

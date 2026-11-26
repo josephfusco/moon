@@ -125,6 +125,9 @@ export function zodiac(lon) {
   return { sign: SIGNS[i], glyph: GLYPHS[i], degree: l - i * 30 };
 }
 
+/** Elongation alone (0 new, 180 full), for when the full state is more than is needed. */
+export const elongationAt = (date) => A.MoonPhase(A.MakeTime(date));
+
 /** Time of the nearest instant (forward or backward) when elongation = target degrees. */
 export function searchPhase(targetDeg, date, direction = 1) {
   const r = A.SearchMoonPhase(targetDeg, A.MakeTime(date), direction * 40);
