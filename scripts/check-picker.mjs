@@ -15,16 +15,18 @@ await js(`localStorage.setItem('moon:hinted', JSON.stringify({ earth: true, expl
 
 const SIZES = [['desktop', 1288, 672, false], ['phone', 390, 844, true], ['small', 320, 568, true], ['landscape', 667, 375, true], ['tablet', 820, 1180, true]];
 for (const [name, w, h, mobile] of SIZES) {
-  await b.size(w, h, mobile, 2); await sleep(400);
+  await b.size(w, h, mobile, 2); await b.send('Emulation.setTouchEmulationEnabled', { enabled: mobile }); await sleep(400);
+  const coarse = await js(`matchMedia('(pointer: coarse)').matches`);
   await js(`document.getElementById('date').click()`); await sleep(300);
   const r = JSON.parse(await js(`(() => { const p = document.getElementById('picker'), r = p.getBoundingClientRect(), c = [...p.querySelectorAll('#pk-grid button')].map((x) => x.getBoundingClientRect());
     return JSON.stringify({ hidden: p.hidden, l: r.left, t: r.top, r: r.right, b: r.bottom, scroll: p.scrollHeight - p.clientHeight, cw: Math.min(...c.map((x) => x.width)), ch: Math.min(...c.map((x) => x.height)), sw: document.documentElement.scrollWidth }); })()`));
-  ok(!r.hidden && r.l >= 0 && r.t >= 0 && r.r <= w && r.b <= h && r.sw <= w, `${name} ${w}x${h}: calendar on screen (${Math.round(r.r - r.l)}x${Math.round(r.b - r.t)}, cells ${Math.round(r.cw)}x${Math.round(r.ch)}, hidden overflow ${r.scroll}px)`);
+  ok(!r.hidden && r.l >= 0 && r.t >= 0 && r.r <= w && r.b <= h && r.sw <= w, `${name} ${w}x${h}: calendar on screen (${Math.round(r.r - r.l)}x${Math.round(r.b - r.t)}, cells ${Math.round(r.cw)}x${Math.round(r.ch)}, hidden overflow ${r.scroll}px${coarse ? ', touch' : ''})`);
+  if (coarse && h > 520) ok(r.ch >= 44, `${name}: day targets are at least 44px tall for fingers`);
   await b.shot(`picker-${name}`);
   await js(`document.getElementById('pk-done').click()`);
 }
 
-await b.size(1288, 672, false, 1); await sleep(300);
+await b.send('Emulation.setTouchEmulationEnabled', { enabled: false }); await b.size(1288, 672, false, 1); await sleep(300);
 const when = () => js(`new Date(window.__moon.S.tween ? window.__moon.S.tween.to : window.__moon.S.t).toString().slice(0, 21)`);
 const open = () => js(`!document.getElementById('picker').hidden`);
 

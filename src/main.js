@@ -292,6 +292,7 @@ picker.addEventListener('keydown', (e) => {
 // A press on the calendar's own background must not drop focus; a press anywhere else closes it.
 picker.addEventListener('mousedown', (e) => { if (!e.target.closest('input')) e.preventDefault(); });
 document.addEventListener('pointerdown', (e) => { if (editing() && !picker.contains(e.target) && e.target !== $('date')) closePicker(); }, true);
+canvas.addEventListener('wheel', () => closePicker(), { passive: true }); // scrubbing or zooming the Moon moves on from the calendar
 picker.addEventListener('focusout', (e) => { if (e.relatedTarget && !picker.contains(e.relatedTarget) && e.relatedTarget !== $('date')) closePicker(); });
 
 document.querySelectorAll('.modes button').forEach((b) => { b.onclick = () => setMode(b.dataset.mode); });
