@@ -129,7 +129,7 @@ body.live #live::before { content: ''; display: inline-block; width: 0.4em; heig
 }
 #rows { display: grid; gap: 1.1rem; }
 #rows > div { display: grid; gap: 1px; }
-#btn-where { padding: 0; min-height: 0; font-size: var(--small); border-bottom: 1px solid var(--faint); }
+#btn-where, #btn-orient { padding: 0; min-height: 0; font-size: var(--small); border-bottom: 1px solid var(--faint); }
 #almanac .k { font-size: var(--small); color: var(--faint); }
 #almanac .v { font-size: 1.3rem; line-height: 1.25; color: var(--ink); font-variant-numeric: tabular-nums; }
 #almanac .n { font-size: var(--small); color: var(--dim); font-variant-numeric: tabular-nums; }
@@ -163,7 +163,7 @@ body[data-mode='artemis'] #readout h1 { font-size: clamp(1.4rem, 1.6vw + 0.9rem,
 body[data-mode='explore'] #almanac { display: none; }
 #btn-map { display: none; }
 body[data-mode='explore'] #btn-map { display: inline-block; }
-body[data-mode='explore'] #btn-details, body[data-mode='explore'] #btn-orient, body[data-mode='artemis'] #btn-details, body[data-mode='artemis'] #btn-orient { display: none; }
+body[data-mode='explore'] #btn-details, body[data-mode='artemis'] #btn-details { display: none; }
 #card {
   position: absolute; right: var(--gutter); top: 50%; transform: translateY(-54%); width: min(24rem, 30vw);
   background: var(--bg); overflow: hidden;
@@ -214,7 +214,7 @@ dialog ul { padding-left: 1.2rem; margin: 0; }
   }
   #almanac::-webkit-scrollbar { display: none; }
   #rows { display: flex; gap: 1.4rem; flex: none; }
-  #rows > div, #btn-where { flex: none; }
+  #rows > div, #btn-where, #btn-orient { flex: none; }
   #almanac .v { font-size: 1.1rem; }
   #card {
     position: static; transform: none; width: auto; order: -1; align-self: stretch; margin: 0 var(--gutter) 0.9rem;
