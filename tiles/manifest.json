@@ -1,0 +1,35 @@
+{
+ "version": "v1",
+ "gutter": 1,
+ "levels": [
+  3,
+  4,
+  5
+ ],
+ "color": {
+  "px": 855,
+  "ext": "webp",
+  "source": "lroc_color_16bit_srgb.tif",
+  "sourceSize": [
+   27360,
+   13680
+  ],
+  "files": 672,
+  "bytes": 49084944
+ },
+ "normal": {
+  "px": 720,
+  "ext": "jpg",
+  "source": "ldem_64_uint.tif",
+  "sourceSize": [
+   23040,
+   11520
+  ],
+  "rangeMeters": [
+   -9114.5,
+   10757
+  ],
+  "files": 672,
+  "bytes": 213869520
+ }
+}

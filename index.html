@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#000000" />
+  <title>Moon</title>
+  <meta name="description" content="The Moon as it really is right now: NASA Lunar Reconnaissance Orbiter data, lit and turned by a real ephemeris." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='13' fill='%231a1a1a'/%3E%3Cpath d='M16 3a13 13 0 0 1 0 26a7 13 0 0 0 0-26' fill='%23e8e8e6'/%3E%3C/svg%3E" />
+  <link rel="manifest" href="/moon/manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="/moon/apple-touch-icon.png" />
+  <script type="module" crossorigin src="/moon/assets/index-BPbABfDx.js"></script>
+  <link rel="stylesheet" crossorigin href="/moon/assets/index-CnsZmK-m.css">
+</head>
+<body data-mode="earth">
+  <canvas id="moon" aria-label="Interactive view of the Moon"></canvas>
+  <div id="labels" aria-hidden="true"></div>
+
+  <header>
+    <div class="brand">Moon</div>
+    <nav class="modes" role="tablist" aria-label="View">
+      <button role="tab" data-mode="earth" aria-selected="true">From Earth</button>
+      <button role="tab" data-mode="explore" aria-selected="false">Explore</button>
+      <button role="tab" data-mode="artemis" aria-selected="false">Artemis II</button>
+    </nav>
+    <div class="tools">
+      <button id="btn-details" aria-pressed="false" title="Distance, next phases, sky position and tidal pull">Details</button>
+      <button id="btn-map" aria-pressed="false" title="Light the whole Moon evenly, ignoring the Sun">Map light</button>
+      <button id="btn-labels" aria-pressed="false" title="Show place names">Names</button>
+      <button id="btn-about" title="How this Moon is made">About</button>
+    </div>
+  </header>
+
+  <main>
+    <section id="readout" aria-live="off">
+      <h1 id="phase">&nbsp;</h1>
+      <p id="sub">&nbsp;</p>
+      <p id="when"><button id="date" title="Choose a date and time" aria-haspopup="dialog" aria-expanded="false">&nbsp;</button><button id="live">live</button></p>
+    </section>
+
+    <div id="almanac"><div id="rows"></div><button id="btn-orient" title="Which way is up. Click to change">North up</button><button id="btn-where" title="Work these out for where you are. Kept in this browser only.">Use my location</button></div>
+
+    <section id="controls">
+      <div id="strip" role="group" aria-label="Jump to a phase"><i id="cursor"></i></div>
+      <div id="transport">
+        <button id="btn-prev" aria-label="Back one day">−1 day</button>
+        <button id="btn-play" aria-pressed="false">Play</button>
+        <button id="btn-next" aria-label="Forward one day">+1 day</button>
+      </div>
+      <p class="hint" id="hint">Drag the Moon to turn time</p>
+    </section>
+
+    <section id="artemis">
+      <article id="card">
+        <a id="card-link" target="_blank" rel="noopener"><img id="card-img" alt="" /></a>
+        <div class="card-body">
+          <h2 id="card-title"></h2>
+          <p id="card-meta"></p>
+          <p id="card-caption"></p>
+          <p id="card-credit"></p>
+        </div>
+      </article>
+      <div id="flyby">
+        <input id="flyby-range" type="range" min="0" max="1000" step="1" aria-label="Flyby time" />
+        <div id="film"></div>
+      </div>
+    </section>
+  </main>
+
+  <div id="picker" role="dialog" aria-label="Choose a date and time" hidden>
+    <div class="pk-head">
+      <button id="pk-prev" aria-label="Previous month"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M6.5 1.5 3 5l3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.2"/></svg></button>
+      <span><span id="pk-month"></span> <input id="pk-year" inputmode="numeric" maxlength="4" size="4" autocomplete="off" aria-label="Year" /></span>
+      <button id="pk-next" aria-label="Next month"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M3.5 1.5 7 5 3.5 8.5" fill="none" stroke="currentColor" stroke-width="1.2"/></svg></button>
+    </div>
+    <div id="pk-dow" aria-hidden="true"></div>
+    <div id="pk-grid"></div>
+    <div class="pk-foot">
+      <input id="pk-time" size="8" autocomplete="off" aria-label="Time, for example 9:30 PM or 21:30" /><span id="pk-zone"></span>
+      <button id="pk-now" title="Return to the present">Now</button>
+      <button id="pk-done">Done</button>
+    </div>
+  </div>
+
+  <dialog id="about">
+    <form method="dialog"><button aria-label="Close">Close</button></form>
+    <h2>How this Moon is made</h2>
+    <p>Nothing here is drawn by hand or faked with a sliding shadow. The Sun, the Earth and the Moon are placed where they really are for the chosen instant, and the phase is simply what that geometry looks like.</p>
+    <h3>The surface</h3>
+    <p><b>Color</b> is the Lunar Reconnaissance Orbiter Camera wide-angle mosaic, built by the LROC team from over 100,000 images and normalized so every part of the globe is shown under the same lighting. NASA's Scientific Visualization Studio packages it as the <a href="https://svs.gsfc.nasa.gov/4720" target="_blank" rel="noopener">CGI Moon Kit</a>; this uses the December 2025 version (643, 566 and 415 nm bands as red, green and blue). The whole disc is drawn from a map 8,192 pixels around (4,096 on phones); zoom in and the app switches to tiles cut from the kit's full-size map, 27,360 pixels around, or about 400 meters per pixel at the equator.</p>
+    <p><b>Shape</b> is the Lunar Orbiter Laser Altimeter elevation model from the same kit, at 16 samples per degree (about 1.9 km), and at 64 per degree (about 470 meters) once you zoom in. It tilts the shading at that detail, and moves the surface itself to its true height on a coarser grid of about 14 km, all at true scale with no exaggeration. That is how nearly every modern Moon model is built: a sphere, an albedo map and a laser-measured height map.</p>
+    <h3>The light</h3>
+    <p>Positions come from <a href="https://github.com/cosinekitty/astronomy" target="_blank" rel="noopener">Astronomy Engine</a>, and the Moon's spin and wobble from the IAU rotation model. Across 2025 to 2027 this matches NASA's Dial-A-Moon to within 0.006% in illumination, 0.005° in libration and sub-solar point, 0.2° in axis tilt and 55 km in distance; the project's tests enforce those limits. With your location on, everything is computed for where you stand rather than the center of the Earth. Until then, the sky and tide rows use Ithaca, New York, with moonrise and moonset on Ithaca's clock. Every other time is in your device's time zone, named beside the date.</p>
+    <h3>The tide</h3>
+    <p>The tidal pull is the vertical part of the tide-raising acceleration at that place: the difference between the pull of the Moon and Sun there and at the Earth's center. It peaks near 1.1 µm/s² for the Moon at its average distance (about 1.4 at perigee) and 0.5 µm/s² for the Sun, about a ten-millionth of your weight. It is the force behind the tides, not a water level; real tide heights depend on coastlines and need tide-gauge data. The Moon has no meaningful radio or magnetic effect at the ground, so none is shown. The light-time under Distance is how long light or a radio signal takes to cross that gap.</p>
+    <p>The surface is shaded with McEwen's lunar-Lambert law, using the same coefficients as the USGS ISIS software, which is why the full Moon is bright right to its edge instead of fading like a ball. The Moon is drawn larger near perigee and smaller near apogee, in true proportion.</p>
+    <h3>Artemis II</h3>
+    <p>The flyby view rides Orion's actual path on 6 April 2026, from the JPL Horizons trajectory, with the Sun where it was. Closest approach comes out at 6,545 km (4,067 miles) above the far side, matching NASA's figure. Photographs are the crew's own, from the NASA Image and Video Library, timed by their camera clocks. Credit: NASA.</p>
+    <h3>On its own, offline</h3>
+    <p>The app asks nothing of any other site. After one visit it keeps itself, the Moon maps and the Artemis photographs on your device, and every calculation runs there, so it works with no connection. Your location, if you share it, never leaves your browser.</p>
+    <p id="offline-full" hidden><button id="btn-keep"></button> <span id="keep-status"></span></p>
+    <h3>Where it is not exact</h3>
+    <ul>
+      <li>Exposure adjusts like a camera on auto, so a thin crescent looks nearly as bright as a full Moon. In reality the full Moon is roughly ten times brighter than a half Moon.</li>
+      <li>Earthshine on the night side is brightened so you can see it, roughly as a dark-adapted eye does.</li>
+      <li>Mountains shade themselves but do not cast long shadows across neighbors, so the terminator is softer than in a telescope.</li>
+      <li>Lunar eclipses use a simple cone model of Earth's shadow; the red color is representative, not predicted.</li>
+      <li>The view through Orion's window is aimed at the Moon's center with north up. The crew's cameras were hand-held and often zoomed far in. Place names are approximate centers.</li>
+      <li>No atmosphere: no horizon reddening and no twinkle.</li>
+    </ul>
+  </dialog>
+
+</body>
+</html>
